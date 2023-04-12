@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Avoid saving files generated during runtime 
+cached_transcripts/
+cached_audio/
