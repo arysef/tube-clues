@@ -7,13 +7,18 @@ from string import printable
 from isodate import parse_duration
 import datetime
 from time import time
+from typing import Optional
 from youtube_transcript_api import YouTubeTranscriptApi
 from chatgptHelpers.services.openaiwrapper import get_chat_completion, get_whisper_transcript
+import re
+from yt_dlp import YoutubeDL
+
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 assert YOUTUBE_API_KEY is not None
 
 youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 cached_transcripts_folder = "cached_transcripts"
+cached_audio_folder = "cached_audio"
 
 def get_channel_id_locally(url):
     """
@@ -23,6 +28,70 @@ def get_channel_id_locally(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     return soup.find("meta", itemprop="channelId")['content']
+
+def to_video_url(id: str) -> str:
+    return f"https://www.youtube.com/watch?v={id}"
+
+def to_audio_location(id: str) -> str: 
+    return os.path.join(cached_audio_folder, id + ".mp3")
+
+def to_transcript_location(id: str) -> str:
+    return os.path.join(cached_transcripts_folder, id + ".txt")
+
+def extract_video_id(youtube_link):
+    try:
+        # Regular expression to match YouTube URL and extract the video ID
+        pattern = re.compile(
+            r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)'
+        )
+        match = pattern.search(youtube_link)
+        
+        if not match:
+            raise ValueError("Invalid YouTube link")
+
+        video_id = match.group(1)
+        return video_id
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+
+def download_video_mp3(video_id: str):
+    """
+    Download a video's audio as an MP3 file and stores it in cached_audio folder.
+    """
+    # Skip if already downloaded
+    if os.path.exists(to_audio_location(video_id)):
+        print("Video audio cached, no download performed for video ID: ".format(id))
+        return 
+
+    # We separately make the filename because yt-dlp adds the ".mp3" extension
+    filename = os.path.join(cached_audio_folder, video_id)
+    video_url = to_video_url(video_id)
+
+    # Create the audio folder if it isn't made yet
+    if not os.path.exists(cached_audio_folder):
+        os.makedirs(cached_audio_folder)
+        print(f"Folder '{cached_audio_folder}' created.")
+    
+    filename = os.path.join(cached_audio_folder, video_id)
+    
+    # Settings for yt-dlp
+    ydl_opts = {
+        'format': 'mp3/bestaudio/best',
+        # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
+        'postprocessors': [{  # Extract audio using ffmpeg
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+        }],
+        'outtmpl': filename
+    }
+
+    # TODO: Likely need error handling here
+    with YoutubeDL(ydl_opts) as ydl:
+        ydl.download([video_url])
+
+    print("Audio download complete: {}".format(filename))
 
 
 def get_video_ids(channel_id, n):
@@ -52,6 +121,9 @@ def get_video_ids(channel_id, n):
 
 
 def convert_date(date_str):
+    """
+    Takes mm/dd/yyyy date string and converts it to YouTube API format
+    """
     if not date_str:
         return None
 
@@ -75,7 +147,8 @@ def get_channel_id_from_username(username):
         print("Channel not found")
         return None
 
-def get_str_transcript(id: str) -> str:
+
+def get_youtube_str_transcript(id: str) -> str:
     """
     Get the transcript of a video from the video ID. Uses YouTube Transcript API.
     Strips out '\n' characters.
@@ -85,22 +158,28 @@ def get_str_transcript(id: str) -> str:
     """
     # Check if transcript is cached
     cached_transcript = get_cached_transcript(id)
-    if cached_transcript: 
+    if cached_transcript:
         return cached_transcript
 
-    transcript = YouTubeTranscriptApi.list_transcripts(id).find_manually_created_transcript(["en", "en-US"]).fetch()
+    transcript = YouTubeTranscriptApi.list_transcripts(
+        id).find_manually_created_transcript(["en", "en-US"]).fetch()
     transcript_text = " ".join([item["text"] for item in transcript])
     transcript_text = transcript_text.replace("\n", " ")
-    transcript_text = ''.join(char for char in transcript_text if char in printable)
-    
+    transcript_text = ''.join(
+        char for char in transcript_text if char in printable)
+
     set_cached_transcript(id, transcript_text)
-    
+
     return transcript_text
 
-class VideoInfo: 
-    def __init__(self, video_id, transcript): 
+
+
+
+class VideoInfo:
+    def __init__(self, video_id, transcript):
         self.video_id = video_id
         self.transcript = transcript
+
 
 def get_videos(channel, max_results=15, start_date=None, end_date=None, require_handmade=True):
     id = get_channel_id_from_username(
@@ -123,17 +202,16 @@ def get_videos(channel, max_results=15, start_date=None, end_date=None, require_
         response = channel_videos_request.execute()
         for item in response['items']:
             id = item['id']['videoId']
-            try: 
+            try:
                 transcript_text = get_str_transcript(id)
                 video_ids.append(VideoInfo(id, transcript_text))
 
-            except Exception as e: 
+            except Exception as e:
                 # print(e)
-                print("Skipping video: {} due to no manually created transcripts", to_video_url(id))
+                print(
+                    "Skipping video: {} due to no manually created transcripts", to_video_url(id))
                 missed_videos += 1
                 continue
-
-            
 
         if 'nextPageToken' in response:
             channel_videos_request = youtube.search().list_next(
@@ -143,28 +221,44 @@ def get_videos(channel, max_results=15, start_date=None, end_date=None, require_
     print("Skipped {} videos due to no manually created transcripts".format(missed_videos))
     return video_ids
 
-def get_cached_transcript(id: str) -> str:
+
+def get_cached_transcript(id: str) -> Optional[str]:
     """
     Get the transcript of a video from the video ID if the transcript is cached.
     """
-    try: 
-        with open("{}/{}.txt".format(cached_transcripts_folder, id), "r") as f: 
+    try:
+        with open(to_transcript_location(id), "r") as f:
             print("Successfully opened cached transcript for video id: {}".format(id))
             return f.read()
-    except Exception as e: 
+    except Exception as e:
         # print("Could not find cached transcript for video id: {}/{}".format(id)
         return None
 
-def set_cached_transcript(id:str, transcript: str): 
-    if not os.path.exists(cached_transcripts_folder): 
+
+def set_cached_transcript(id: str, transcript: str):
+    if not os.path.exists(cached_transcripts_folder):
         os.makedirs(cached_transcripts_folder)
         print(f"Folder '{cached_transcripts_folder}' created.")
-    
-    full_file_path = os.path.join(cached_transcripts_folder, id + ".txt")
-    
+
+    full_file_path = to_transcript_location(id)
+
     with open(full_file_path, "w") as file:
         file.write(transcript)
         print("Successfully wrote transcript for video id: {}".format(id))
+
+def create_whisper_transcript(id: str, default_to_cached=True) -> str:
+    # Use the cached result if we want the cached result and one exists
+    cached_result = get_cached_transcript(id)
+    if default_to_cached and cached_result:
+        cached_result
+        
+    # Downloads video
+    download_video_mp3(id)
+    # Creates whisper transcript from known audio location
+    transcript = get_whisper_transcript(to_audio_location(id))
+    set_cached_transcript(id, transcript)
+    return transcript
+
 
 def get_video_duration(video_id) -> datetime.timedelta:
     """
@@ -184,10 +278,6 @@ def get_video_duration(video_id) -> datetime.timedelta:
         raise ValueError("Invalid video ID or API key")
 
 
-def to_video_url(id: str) -> str:
-    return f"https://www.youtube.com/watch?v={id}"
-
-
 def get_gpt_input(question: str, transcript: str) -> str:
     message = "You are a journalism analysis assistant. The incoming messages will be transcripts from videos. " + question
 
@@ -198,16 +288,28 @@ def get_gpt_input(question: str, transcript: str) -> str:
     return get_chat_completion(messages)
 
 
+def process_video(url: str) -> str:
+    id = extract_video_id(url)
+    download_video_mp3(id)
+    transcript = create_whisper_transcript(id)
+    print(transcript)
+
+    default_prompt = "The user will send messages that contain the text to analyze. " \
+        "Your role is to identify all potentially misleading or unverifiable claims and opinions. The claims should be " \
+        "ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event. " \
+        "Please return the statements as a JSON value of statements."
+    return get_gpt_input(default_prompt, transcript)
+
 if __name__ == "__main__":
     username = "vlogbrothers"
 
-    videos = get_videos(username, 1, end_date="4/5/2023")
-    # transcript = get_str_transcript(videos[0])
-    if not videos: 
-        print("No videos with manually created transcripts. Exiting.")
+    # videos = get_videos(username, 1, end_date="4/5/2023")
+    # # transcript = get_str_transcript(videos[0])
+    # if not videos:
+    #     print("No videos with manually created transcripts. Exiting.")
     # system_propt = \
     # """
-    # The user will send messages that contain the text to analyze. Please identify unverifiable opinions, claims, or misleading statements and return those statements. The output of this will be later used to find false statements or opinions about potentially political or societal topics that are unverifiable. Include the context around the statement necessary to understand the statement. Return the output as a JSON list of statements. 
+    # The user will send messages that contain the text to analyze. Please identify unverifiable opinions, claims, or misleading statements and return those statements. The output of this will be later used to find false statements or opinions about potentially political or societal topics that are unverifiable. Include the context around the statement necessary to understand the statement. Return the output as a JSON list of statements.
 
     # Example of statements to be included:
     # 1. "The world is going to a dark place" - because it is broad and opinion-based.
@@ -216,7 +318,6 @@ if __name__ == "__main__":
     # Example of statements to be excluded:
     # 1. "I loved ice cream when I was a kid" - because it is personal history and not a supporting part of the argument.
 
-     
     # """
     system_prompt = "The user will send messages that contain the text to analyze. " \
         "Your role is to identify all potentially misleading or unverifiable claims and opinions. The claims should be " \
@@ -231,7 +332,10 @@ if __name__ == "__main__":
         "I want to start with a little story, on my tenth birthday my parents had me run a race." \
         "There were no "
 
-    print(get_gpt_input(system_prompt, test_transcript))
+    # print(get_gpt_input(system_prompt, test_transcript))
 
     # print(get_gpt_input(system_prompt, get_str_transcript("KQh1fVpMNUM")))
     # print(get_whisper_transcript("shawnryan.mp3"))
+
+    # download_video_mp3('o4vLoZphZGs')
+    print(process_video("https://www.youtube.com/watch?v=o4vLoZphZGs"))
