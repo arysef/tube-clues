@@ -12,10 +12,9 @@ def get_gpt_input(question: str, transcript: str) -> str:
     return get_chat_completion(messages)
 
 
-def process_video(url: str) -> str:
+def process_video(url: str, default_to_cached_transcript=True) -> str:
     id = extract_video_id(url)
-    download_video_mp3(id)
-    transcript = create_whisper_transcript(id)
+    transcript = create_whisper_transcript(id, default_to_cached_transcript)
     print(transcript)
 
     default_prompt = "The user will send messages that contain the text to analyze. " \
@@ -63,4 +62,4 @@ if __name__ == "__main__":
     # print(get_whisper_transcript("shawnryan.mp3"))
 
     # download_video_mp3('o4vLoZphZGs')
-    print(process_video("https://www.youtube.com/watch?v=o4vLoZphZGs"))
+    print(process_video("https://www.youtube.com/watch?v=o4vLoZphZGs", default_to_cached_transcript=False))

@@ -16,7 +16,7 @@ def get_cached_transcript(id: str) -> Optional[str]:
             print("Successfully opened cached transcript for video id: {}".format(id))
             return f.read()
     except Exception as e:
-        print("Could not find cached transcript for video id: {}/{}".format(id)
+        print("Could not find cached transcript for video {}".format(to_transcript_location(id)))
         return None
 
 
@@ -35,7 +35,7 @@ def create_whisper_transcript(id: str, default_to_cached=True) -> str:
     # Use the cached result if we want the cached result and one exists
     cached_result = get_cached_transcript(id)
     if default_to_cached and cached_result:
-        cached_result
+        return cached_result
         
     # Downloads video
     download_video_mp3(id)
