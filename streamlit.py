@@ -57,24 +57,100 @@ def main():
             gpt_feedback = get_gpt_input(default_prompt, transcript)
             # gpt_feedback = """
             # {
-            # "statements": [
-            #     "I know that sports are not very important.",
-            #     "It is not critical to the future of humanity whether a ball goes over a line or into a cup or through a net.",
-            #     "I am sympathetic to people who feel like maybe we shouldn't devote hundreds of billions of dollars and gobs of human attention to the exploits of these balls and the people who are paid to manipulate them."
+            # "overarching_claims": [
+            #     {
+            #     "claim": "Cheap Android TV boxes may contain pre-installed malware and security risks",
+            #     "supporting_facts": [
+            #         {
+            #         "summary": "T95 and other boxes found with pre-installed backdoors",
+            #         "sources": [
+            #             "Desktop Echo's discovery of a pre-installed backdoor on the T95",
+            #             "the T95's backdoor is only the tip of the iceberg"
+            #         ]
+            #         },
+            #         {
+            #         "summary": "Firmware-over-the-air URL points to potentially unsafe sources",
+            #         "sources": [
+            #             "this isn't a problem in and of itself, but with China's looser regulations, especially with respect to foreign nationals, it means that there are no guarantees that the firmware that you download will be clean or that it will even be firmware at all"
+            #         ]
+            #         },
+            #         {
+            #         "summary": "Some Android TV boxes infected with Copycat malware",
+            #         "sources": [
+            #             "the original infected an estimated 14 million devices and was designed primarily to generate and steal ad revenue",
+            #             "almost half of them had the same core Java folder and open preferences file"
+            #         ]
+            #         }
+            #     ],
+            #     "supporting_opinions": [
+            #         {
+            #         "summary": "People who help with copyright circumvention may not care about other laws",
+            #         "sources": [
+            #             "it's important to remember that the kinds of folks who are willing to help you circumvent copyright law tend to be the same kinds of folks who don't care about other laws either, like privacy or data collection laws"
+            #         ]
+            #         },
+            #         {
+            #         "summary": "Android TV boxes might not deliver on their advertised specifications",
+            #         "sources": [
+            #             "only half of that will ever be usable and the system properties seem to corroborate that",
+            #             "So do they have any redeeming qualities? Are they lying about what's inside the box as well? Yeah."
+            #         ]
+            #         }
+            #     ]
+            #     },
+            #     {
+            #     "claim": "There are affordable, safe alternatives to potentially risky Android TV boxes",
+            #     "supporting_facts": [
+            #         {
+            #         "summary": "Chromecast with Google TV and Nvidia Shield are safe options",
+            #         "sources": [
+            #             "the Nvidia Shield is definitely that, offering up 1080p to 4k upscaling, regular software updates, and the ability to act as a Plex media server",
+            #             "both come free of malware"
+            #         ]
+            #         }
+            #     ],
+            #     "supporting_opinions": [
+            #         {
+            #         "summary": "Cheap Android TV boxes are not worth the risk compared to safer alternatives",
+            #         "sources": [
+            #             "so for just about anyone, it's not worth the risk, especially when these things cost about the same as a Chromecast with Google TV"
+            #         ]
+            #         }
+            #     ]
+            #     }
             # ]
             # }
             # """
 
             print(gpt_feedback)
             gpt_feedback = json.loads(gpt_feedback)
-            results = gpt_feedback['statements']
+            claims = gpt_feedback['overarching_claims']
 
             # Container for the results
             with st.container():
                 # Add custom CSS to the container and display the "Results" header
                 st.header("Results: ")
-                for result in results:
-                    st.write(f"- {result}")
+                for claim in claims:
+                    with st.expander(claim["claim"], expanded=False):
+                        st.write("Facts: ")
+                        facts = []
+                        
+                        for fact in claim["supporting_facts"]:
+                            facts.append("- {}".format(fact["summary"]))
+                            for source in fact["sources"]:
+                                facts.append("    - \"{}\"".format(source))
+                        st.write('\n'.join(facts))
+                        
+                        st.write("Opinions: ")
+                        opinions = []
+
+                        for opinion in claim["supporting_opinions"]:
+                            opinions.append("- {}".format(opinion["summary"]))
+                            for source in opinion["sources"]:
+                                opinions.append("    - \"{}\"".format(source))
+                        st.write('\n'.join(opinions))
+
+                    # st.write(f"- {result}")
 
             elapsed_time = time.time() - start_time
             elapsed_time_total += elapsed_time

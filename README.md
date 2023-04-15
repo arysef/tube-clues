@@ -9,6 +9,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
     - Create UX to present identified potentially misleading or false facts and then give option to investigate further
 - Limit to reject videos over a certain length (likely around 15 minutes)
     - Eventually add support for longer videos, potentially by breaking up the video
+- Determine definitively if I'm going 
 - Add options for inputting own's one prompt 
 - Currently whisper and youtube transcript caches are mixed. Ideally they would be separate.
 - Add diarization
@@ -32,3 +33,5 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Separate functions into different files by function (maybe helper, main, and transcript acquisition?)
 
 &check; Have some form of web UX 
+
+&check; Consider figuring out some UX for connecting overarching claims to the facts that are being presented
