@@ -4,6 +4,7 @@ from string import printable
 from yt_dlp import YoutubeDL
 
 from helpers import *
+from transcripts import *
 
 def download_video_mp3(video_id: str):
     """
@@ -54,6 +55,7 @@ def get_video_ids(channel_id, n):
         id=channel_id
     ).execute()
     # print(channel_content)
+    print(channel_content)
     uploads_playlist_id = channel_content["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
     # Fetch the most recent `n` video IDs

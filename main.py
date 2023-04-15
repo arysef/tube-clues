@@ -1,6 +1,28 @@
 from chatgptHelpers.services.openaiwrapper import get_chat_completion
-from video_processing import download_video_mp3, extract_video_id
+
+import helpers
 from transcripts import create_whisper_transcript
+from video_processing import download_video_mp3, extract_video_id, get_video_ids
+
+# "The user will send messages that contain the text to analyze. " \
+#         "Your role is to identify all potentially misleading or unverifiable claims and opinions. The claims should be " \
+#         "ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event. " \
+#         "Please return the statements as a JSON value of statements."
+# default_prompt = """
+# The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
+# First your role is to identify any overarching or "big picture" claims that are being promoted in the text. These will be returned as a JSON value called "overarching_claims".
+# Your role is then to identify all potentially misleading or unverifiable claims and opinions that are in some way used to support the big picture claims. 
+# The claims and opinions should be ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event.
+# Please return the statements as a JSON value of statements. If there are no such statements, an empty JSON is acceptable."
+# """
+default_prompt = """
+The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
+First your role is to identify any overarching or "big picture" claims that are being promoted in the text. These will be returned as a JSON value called "overarching_claims".
+Your role is then to identify all potentially misleading claims or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. 
+Please return the statements as a JSON value of statements. If there are no such statements, an empty JSON is acceptable."
+"""
+# The claims and opinions should be ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event.
+
 
 def get_gpt_input(question: str, transcript: str) -> str:
     message = "You are a journalism analysis assistant. The incoming messages will be transcripts from videos. " + question
@@ -17,10 +39,6 @@ def process_video(url: str, default_to_cached_transcript=True) -> str:
     transcript = create_whisper_transcript(id, default_to_cached_transcript)
     print(transcript)
 
-    default_prompt = "The user will send messages that contain the text to analyze. " \
-        "Your role is to identify all potentially misleading or unverifiable claims and opinions. The claims should be " \
-        "ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event. " \
-        "Please return the statements as a JSON value of statements."
     return get_gpt_input(default_prompt, transcript)
 
 
@@ -62,4 +80,5 @@ if __name__ == "__main__":
     # print(get_whisper_transcript("shawnryan.mp3"))
 
     # download_video_mp3('o4vLoZphZGs')
-    print(process_video("https://www.youtube.com/watch?v=o4vLoZphZGs", default_to_cached_transcript=False))
+    # print(process_video("https://www.youtube.com/watch?v=o4vLoZphZGs", default_to_cached_transcript=False))
+    # print(get_video_ids(helpers.get_channel_id_from_username("vlogbrothers"), 4))

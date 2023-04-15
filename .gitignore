@@ -131,3 +131,5 @@ dmypy.json
 # Avoid saving files generated during runtime 
 cached_transcripts/
 cached_audio/
+.vscode
+.DS_Store
