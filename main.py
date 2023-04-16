@@ -31,7 +31,7 @@ The statements in the sources fields should be included in full.
 Identify all claims that could potentially be misleading or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. They should be split into the "supporting_facts" and "supporting_opinions" sections. 
 If a fact or opinion is used in more than one overarching claim, it can be included in both of the claims' JSON values. Identify all overarching claims and all of the supporting facts and opinions. 
 Include all relevant overarching claims along with all facts and opinions used to support the claims. 
-Please return as a JSON value of "overarching_claims".
+Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
 """
 # The claims and opinions should be ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event.
 

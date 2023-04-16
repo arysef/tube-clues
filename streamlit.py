@@ -30,6 +30,15 @@ def main():
         if not video_id:
             st.error("Invalid video URL.")
             return
+        
+        duration = get_video_duration(video_id)
+
+        if duration > datetime.timedelta(minutes=15): 
+            st.error("Video duration of {} is too long. Maximum video duration is currently 15 minutes.".format(duration))
+            return
+        
+        if duration > datetime.timedelta(minutes=10):
+            st.warning("Video duration is over 10 minutes, processing time may be extended.")
         elapsed_time_total = 0
         # corpus_df = None
         # answer = None
@@ -50,77 +59,80 @@ def main():
                 st.error("Could not create transcript for video.")
                 return
         
+        with st.expander("Video Transcript", expanded=False): 
+            st.write(transcript)
+        
 
         # Generate answer
         with st.spinner("Searching video for statements..."):
             start_time = time.time()
-            gpt_feedback = get_gpt_input(default_prompt, transcript)
-            # gpt_feedback = """
-            # {
-            # "overarching_claims": [
-            #     {
-            #     "claim": "Cheap Android TV boxes may contain pre-installed malware and security risks",
-            #     "supporting_facts": [
-            #         {
-            #         "summary": "T95 and other boxes found with pre-installed backdoors",
-            #         "sources": [
-            #             "Desktop Echo's discovery of a pre-installed backdoor on the T95",
-            #             "the T95's backdoor is only the tip of the iceberg"
-            #         ]
-            #         },
-            #         {
-            #         "summary": "Firmware-over-the-air URL points to potentially unsafe sources",
-            #         "sources": [
-            #             "this isn't a problem in and of itself, but with China's looser regulations, especially with respect to foreign nationals, it means that there are no guarantees that the firmware that you download will be clean or that it will even be firmware at all"
-            #         ]
-            #         },
-            #         {
-            #         "summary": "Some Android TV boxes infected with Copycat malware",
-            #         "sources": [
-            #             "the original infected an estimated 14 million devices and was designed primarily to generate and steal ad revenue",
-            #             "almost half of them had the same core Java folder and open preferences file"
-            #         ]
-            #         }
-            #     ],
-            #     "supporting_opinions": [
-            #         {
-            #         "summary": "People who help with copyright circumvention may not care about other laws",
-            #         "sources": [
-            #             "it's important to remember that the kinds of folks who are willing to help you circumvent copyright law tend to be the same kinds of folks who don't care about other laws either, like privacy or data collection laws"
-            #         ]
-            #         },
-            #         {
-            #         "summary": "Android TV boxes might not deliver on their advertised specifications",
-            #         "sources": [
-            #             "only half of that will ever be usable and the system properties seem to corroborate that",
-            #             "So do they have any redeeming qualities? Are they lying about what's inside the box as well? Yeah."
-            #         ]
-            #         }
-            #     ]
-            #     },
-            #     {
-            #     "claim": "There are affordable, safe alternatives to potentially risky Android TV boxes",
-            #     "supporting_facts": [
-            #         {
-            #         "summary": "Chromecast with Google TV and Nvidia Shield are safe options",
-            #         "sources": [
-            #             "the Nvidia Shield is definitely that, offering up 1080p to 4k upscaling, regular software updates, and the ability to act as a Plex media server",
-            #             "both come free of malware"
-            #         ]
-            #         }
-            #     ],
-            #     "supporting_opinions": [
-            #         {
-            #         "summary": "Cheap Android TV boxes are not worth the risk compared to safer alternatives",
-            #         "sources": [
-            #             "so for just about anyone, it's not worth the risk, especially when these things cost about the same as a Chromecast with Google TV"
-            #         ]
-            #         }
-            #     ]
-            #     }
-            # ]
-            # }
-            # """
+            # gpt_feedback = get_gpt_input(default_prompt, transcript)
+            gpt_feedback = """
+            {
+            "overarching_claims": [
+                {
+                "claim": "Cheap Android TV boxes may contain pre-installed malware and security risks",
+                "supporting_facts": [
+                    {
+                    "summary": "T95 and other boxes found with pre-installed backdoors",
+                    "sources": [
+                        "Desktop Echo's discovery of a pre-installed backdoor on the T95",
+                        "the T95's backdoor is only the tip of the iceberg"
+                    ]
+                    },
+                    {
+                    "summary": "Firmware-over-the-air URL points to potentially unsafe sources",
+                    "sources": [
+                        "this isn't a problem in and of itself, but with China's looser regulations, especially with respect to foreign nationals, it means that there are no guarantees that the firmware that you download will be clean or that it will even be firmware at all"
+                    ]
+                    },
+                    {
+                    "summary": "Some Android TV boxes infected with Copycat malware",
+                    "sources": [
+                        "the original infected an estimated 14 million devices and was designed primarily to generate and steal ad revenue",
+                        "almost half of them had the same core Java folder and open preferences file"
+                    ]
+                    }
+                ],
+                "supporting_opinions": [
+                    {
+                    "summary": "People who help with copyright circumvention may not care about other laws",
+                    "sources": [
+                        "it's important to remember that the kinds of folks who are willing to help you circumvent copyright law tend to be the same kinds of folks who don't care about other laws either, like privacy or data collection laws"
+                    ]
+                    },
+                    {
+                    "summary": "Android TV boxes might not deliver on their advertised specifications",
+                    "sources": [
+                        "only half of that will ever be usable and the system properties seem to corroborate that",
+                        "So do they have any redeeming qualities? Are they lying about what's inside the box as well? Yeah."
+                    ]
+                    }
+                ]
+                },
+                {
+                "claim": "There are affordable, safe alternatives to potentially risky Android TV boxes",
+                "supporting_facts": [
+                    {
+                    "summary": "Chromecast with Google TV and Nvidia Shield are safe options",
+                    "sources": [
+                        "the Nvidia Shield is definitely that, offering up 1080p to 4k upscaling, regular software updates, and the ability to act as a Plex media server",
+                        "both come free of malware"
+                    ]
+                    }
+                ],
+                "supporting_opinions": [
+                    {
+                    "summary": "Cheap Android TV boxes are not worth the risk compared to safer alternatives",
+                    "sources": [
+                        "so for just about anyone, it's not worth the risk, especially when these things cost about the same as a Chromecast with Google TV"
+                    ]
+                    }
+                ]
+                }
+            ]
+            }
+            """
 
             print(gpt_feedback)
             gpt_feedback = json.loads(gpt_feedback)
@@ -132,7 +144,7 @@ def main():
                 st.header("Results: ")
                 for claim in claims:
                     with st.expander(claim["claim"], expanded=False):
-                        st.write("Facts: ")
+                        st.write("Facts Claimed in Video: ")
                         facts = []
                         
                         for fact in claim["supporting_facts"]:
@@ -141,7 +153,7 @@ def main():
                                 facts.append("    - \"{}\"".format(source))
                         st.write('\n'.join(facts))
                         
-                        st.write("Opinions: ")
+                        st.write("Opinions Expressed in Video: ")
                         opinions = []
 
                         for opinion in claim["supporting_opinions"]:

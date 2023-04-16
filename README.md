@@ -7,9 +7,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
     - UX to visualize results from query / video analysis 
 - Connect to search tool (similar to stochasticity) for fact checking 
     - Create UX to present identified potentially misleading or false facts and then give option to investigate further
-- Limit to reject videos over a certain length (likely around 15 minutes)
-    - Eventually add support for longer videos, potentially by breaking up the video
-- Determine definitively if I'm going 
+- Determine definitively if I'm going for fact checking or opinion finding first
 - Add options for inputting own's one prompt 
 - Currently whisper and youtube transcript caches are mixed. Ideally they would be separate.
 - Add diarization
@@ -22,6 +20,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Add graph-based visualization (ex: comparisons on factors such as opinions per minute, political lean, misleading facts per 1000 words)
 - Host website 
 - Basic visualization around custom prompts 
+- Add support for longer videos, maybe by breaking up the video
 
 ## Completed
 &check; Ability to enter a link and run the processing pipeline 
@@ -35,3 +34,5 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Have some form of web UX 
 
 &check; Consider figuring out some UX for connecting overarching claims to the facts that are being presented
+
+&check; Limit to reject videos over 15 minutes
