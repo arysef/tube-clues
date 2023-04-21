@@ -21,18 +21,20 @@ from video_processing import download_video_mp3, extract_video_id, get_video_ids
 # Your role is then to identify all potentially misleading claims or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. 
 # Please return the statements as a JSON value of statements. If there are no such statements, an empty JSON is acceptable."
 # """
-default_prompt = """
-The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
-Your role is to identify any overarching or "big picture" claims that are being promoted in the text. These will be returned as a JSON value called "overarching_claims".
-Each of these claims should be a JSON value as well. Each should have a field called "claim" which is a summarization of what the claim is. 
-The value should also have a value called "supporting_facts" which lists all facts that are facts that can be fact-checked that are used in the video. The supporting facts field should have a "summary" field with a short summarization of the supporting fact along with a "sources" field that lists all statements from the text that make this claim. 
-The value should also have a field called "supporting_opinions" which lists all opinions that are used to support the overarching claim. This can also include things that could be considered facts but that are too abstract to feasibly fact check. Similar to the supporting opinions field this should have a "summary" field and "sources" field which are a summarization of the opinion and the direct quotes from the text. 
-The statements in the sources fields should be included in full.
-Identify all claims that could potentially be misleading or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. They should be split into the "supporting_facts" and "supporting_opinions" sections. 
-If a fact or opinion is used in more than one overarching claim, it can be included in both of the claims' JSON values. Identify all overarching claims and all of the supporting facts and opinions. 
-Include all relevant overarching claims along with all facts and opinions used to support the claims. 
-Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
-"""
+# default_prompt = """
+# The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
+# Your role is to identify any overarching or "big picture" claims that are being promoted in the text. These will be returned as a JSON value called "overarching_claims".
+# Each of these claims should be a JSON value as well. Each should have a field called "claim" which is a summarization of what the claim is. 
+# The value should also have a value called "supporting_facts" which lists all facts that are facts that can be fact-checked that are used in the video. The supporting facts field should have a "summary" field with a short summarization of the supporting fact along with a "sources" field that lists all statements from the text that make this claim. 
+# The value should also have a field called "supporting_opinions" which lists all opinions that are used to support the overarching claim. This can also include things that could be considered facts but that are too abstract to feasibly fact check. Similar to the supporting opinions field this should have a "summary" field and "sources" field which are a summarization of the opinion and the direct quotes from the text. 
+# The statements in the sources fields should be included in full.
+# Identify all claims that could potentially be misleading or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. They should be split into the "supporting_facts" and "supporting_opinions" sections. 
+# If a fact or opinion is used in more than one overarching claim, it can be included in both of the claims' JSON values. Identify all overarching claims and all of the supporting facts and opinions. 
+# Include all relevant overarching claims along with all facts and opinions used to support the claims. 
+# Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
+# """
+
+
 # The claims and opinions should be ones that are used to progress a viewpoint about society, politics, governance, philosophy, or a newsworthy event.
 
 

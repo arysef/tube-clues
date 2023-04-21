@@ -12,7 +12,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Currently whisper and youtube transcript caches are mixed. Ideally they would be separate.
 - Add diarization
 - Add text streaming for GPT results
-- Option to prefer manually created YouTube transcript or using Whisper
+- Option to use YouTube transcript if it exists (as opposed to using Whisper)
 - Keep an eye on/figure out protobuf version conflict (grpcio-tools and google-api-core vs streamlit)
 
 ## Stretch Goals
@@ -36,3 +36,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Consider figuring out some UX for connecting overarching claims to the facts that are being presented
 
 &check; Limit to reject videos over 15 minutes
+
+&check; Split each type of analysis into its own flow
+
+&check; Added caching for GPT output

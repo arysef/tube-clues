@@ -132,4 +132,4 @@ dmypy.json
 cached_transcripts/
 cached_audio/
 .vscode
-.DS_Store
+**/.DS_Store
