@@ -51,7 +51,7 @@ def extract_video_id(youtube_link):
     try:
         # Regular expression to match YouTube URL and extract the video ID
         pattern = re.compile(
-            r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)'
+            r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)([\w-]+)'
         )
         match = pattern.search(youtube_link)
         
