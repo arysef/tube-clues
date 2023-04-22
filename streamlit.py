@@ -64,39 +64,43 @@ Please return as a JSON value of "overarching_claims". There should be no indend
             st.sidebar.info("Answer crafted in {:.2f} seconds.".format(elapsed_time))
     return elapsed_time
 
-
-
+def opinion_count_flow(transcript: str):
+    opinion_count_prompt = """
+    """
+    st.text("Opinion flow not yet implemented.")
+    return 0
 
 def main():
-    """
-    stochasticity
-    Badabing Streamlit Version
-    
-    Generates an answer to a user's query by scraping relevant web pages, generating embeddings, searching the index for relevant snippets, and piecing together an answer from the snippets.
-    """
+
     st.title("Tubes Clues")
-    # st.text("LLM Augmented Web Search")
-    # Center the bing_query text input on the page
+
     st.markdown("""<style>.reportview-container .markdown-text { text-align: center; }</style>""", unsafe_allow_html=True)
     video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
-    # prompt_selector = st.checkbox("Use alternate prompt")
-    # prompt_selector = st.select_slider(
-    #     "",
-    #     options=["3.5", "4"],
-    #     value="3.5"
-    # )
+
     summarization = False
+    opinion_count = False
+    button_clicked = False
+
 
     st.write("Click button for chosen flow: ")
-    if st.button("General Summarization"):
-        summarization = True
+    col1, col2, col3  = st.columns([0.8, 1, 1], gap="small")
+    with col1: 
+        if st.button("General Summarization"):
+            summarization = True
+    
+    with col2:
+        if st.button("Opinion Count"):
+            opinion_count = True
 
+    # Add other buttons here once they're added
+    button_clicked = summarization | opinion_count
+
+    # This part is required regardless of chosen flow.
     # Nothing has happened yet, no error message needed (not summarization included because URL needs to be filled when button pressed)
-    if (video_url == "" and not summarization):
+    if (video_url == "" and not button_clicked):
         return
 
-        # This part of the flow is actually general. 
-        # It is under the "General Summarization" button to avoid recalculating each time focus is changed from/to the webpage.
+    # Ensure that the URL is valid and that video is short enough to process
     video_id = extract_video_id(video_url)
     if not video_id:
         st.error("Invalid video URL.")
@@ -112,11 +116,9 @@ def main():
         st.warning("Video duration is over 10 minutes, processing time may be extended.")
     elapsed_time_total = 0
 
+    # Create or retrieve transcript for video
     transcript = None
     start_time = time.time()
-    
-
-    # Generate search queries
     with st.spinner("Creating transcript for video..."):
         try: 
             transcript = create_whisper_transcript(video_id)
@@ -127,14 +129,22 @@ def main():
             st.error("Could not create transcript for video.")
             return
     
+    # Display transcript
     with st.expander("Video Transcript", expanded=False): 
         st.write(transcript)
 
+    # Summarization flow
     if summarization:
         time_for_summarization_flow = summarization_flow(transcript)
         elapsed_time_total += time_for_summarization_flow
+    
+    if opinion_count:
+        time_for_opinion_count_flow = opinion_count_flow(transcript)
+        elapsed_time_total += time_for_opinion_count_flow
         
     st.sidebar.info("The total flow took {:.2f} seconds.".format(elapsed_time_total))
+    if not button_clicked:
+        st.info("For additional processing, please select an option above.")
 
 if __name__ == '__main__':
     main()
