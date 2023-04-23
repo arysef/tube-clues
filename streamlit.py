@@ -64,6 +64,50 @@ Please return as a JSON value of "overarching_claims". There should be no indend
             st.sidebar.info("Answer crafted in {:.2f} seconds.".format(elapsed_time))
     return elapsed_time
 
+def fact_finding_flow(transcript: str): 
+    # fact_finding_prompt = """
+    # You are an expert fact checking assistant. Your job will be to find the most valuable facts to fact check in the video. I want you to find the 5 to 10 most valuable facts to fact check. 
+    # These should be facts that are important to the video and that are not too abstract to feasibly fact check. If there are 
+    # """
+    fact_finding_prompt = """
+You are an assistant to an adversarial political fact checker. 
+Your role is to find the most valuable facts to fact check in the given transcript. 
+You should carefully analyze what facts are worth checking by weighing the importance of the fact to the video and the feasibility of fact checking the claim.
+This should be done by first identifying the main claims in the video and the underlying political or ideological themes that the video is promoting and then choosing the facts that can be most feasibly checked and are most likely to undercut the the conclusions, themes, opinions, and ideologies of the video is proven incorrect. 
+In weighing the priority of the fact for fact checking, you should consider a number of factsors: 
+    - You should consider the overall argument of the video and determine how important the fact is to the argument.
+    - The political biases of the speaker of the video. For example if the speaker appears to be conservative, conservative talking points should be paid particular attention. Similarly, if the speaker appears to be liberal, liberal talking points should be paid particular attenion. 
+    - You should consider how important the fact is to the video's conclusion.
+    - You should consider the underlying ideas and biases that the video is promoting and determine how important the fact is to those ideas.
+    - Offhand comments about topics that are not directly related to the conclusion but are relevant to the underlying tone and "slant" of the video should be considered.
+    - You should consider how feasible it might be to fact check the claim using Google searches.
+    - You should avoid recommending facts to check that are frivolous and not relevant to the video's point, tone, opinions, or conclusion.
+    - You should recommend the facts that are most likely to make cut the legs out from the video's argument and tone if they are proven false.
+The result should be a JSON.
+The first value in the JSON should be a "ideas_and_themes" field. This field should be a paragraph explaining the speaker's political slant, the conclusions they are promoting both directly and indirectly, and any biases which the speaker is displaying in the text.
+The there should also be a JSON field called "facts_to_check" that contains a list of values representing the facts that should be checked.
+Each fact should have a field called "fact" which is a summarization of the fact, it should also have a field called "sources" which is a list of all statements from the text that make this claim.
+The statements in the sources fields should be included in full. Any required explanation can be included in other additional fields which are not the fields mentioned above. 
+All relevant facts to check (up to 10) should be included.
+"""
+    with st.container():
+        results = get_gpt_input_shim(fact_finding_prompt, transcript)
+        results_json = json.loads(results)
+        st.write("**Ideas and Themes**")
+        st.write(results_json["ideas_and_themes"])
+        st.write("**Facts to Check:**")
+
+        facts_to_check = results_json["facts_to_check"]
+        for fact in facts_to_check:
+            with st.expander(fact["fact"], expanded=False):
+                st.write("Sources: ")
+                for source in fact["sources"]:
+                    st.write("  - \"{}\"".format(source))
+                
+        # st.write(results)
+
+    return 0
+
 def opinion_count_flow(transcript: str):
     opinion_count_prompt = """
     """
@@ -79,21 +123,23 @@ def main():
 
     summarization = False
     opinion_count = False
+    fact_checking = False
     button_clicked = False
 
 
     st.write("Click button for chosen flow: ")
-    col1, col2, col3  = st.columns([0.8, 1, 1], gap="small")
+    col1, col2, col3  = st.columns([1, 1, 1], gap="small")
     with col1: 
-        if st.button("General Summarization"):
-            summarization = True
+        summarization = st.button("General Summarization", use_container_width=True)
     
     with col2:
-        if st.button("Opinion Count"):
-            opinion_count = True
+        opinion_count = st.button("Opinion Count", use_container_width=True)
+    
+    with col3:
+        fact_checking = st.button("Fact Finding", use_container_width=True)
 
     # Add other buttons here once they're added
-    button_clicked = summarization | opinion_count
+    button_clicked = summarization | opinion_count | fact_checking  
 
     # This part is required regardless of chosen flow.
     # Nothing has happened yet, no error message needed (not summarization included because URL needs to be filled when button pressed)
@@ -141,6 +187,10 @@ def main():
     if opinion_count:
         time_for_opinion_count_flow = opinion_count_flow(transcript)
         elapsed_time_total += time_for_opinion_count_flow
+    
+    if fact_checking:
+        time_for_fact_checking_flow = fact_finding_flow(transcript)
+        elapsed_time_total += time_for_fact_checking_flow
         
     st.sidebar.info("The total flow took {:.2f} seconds.".format(elapsed_time_total))
     if not button_clicked:
