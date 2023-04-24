@@ -39,10 +39,9 @@ from video_processing import download_video_mp3, extract_video_id, get_video_ids
 
 
 def get_gpt_input(question: str, transcript: str) -> str:
-    message = "You are a journalism analysis assistant. The incoming messages will be transcripts from videos. " + question
 
     messages = [
-        {"role": "system", "content": message},
+        {"role": "system", "content": question},
         {"role": "user", "content": transcript},
     ]
     return get_chat_completion(messages)

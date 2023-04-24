@@ -12,6 +12,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
     - Add a way to search for each of the facts
         - Currently thinking of doing transcript->list of facts->formulate search queries->search
         - This is a lot of steps though so I'll try transcripts->formulate search queries, skipping list of facts at some point
+    - Many of these facts are so complicated lol 
     - Display in UX
 - Develop some sort of opinionation measure and way to display it
 - Add options for inputting own's one prompt 
