@@ -19,8 +19,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Currently whisper and youtube transcript caches are mixed. Ideally they would be separate.
 - Add diarization
 - Add text streaming for GPT results
-- Option to use YouTube transcript if it exists (as opposed to using Whisper)
-- Keep an eye on/figure out protobuf version conflict (grpcio-tools and google-api-core vs streamlit)
+- Option to use YouTube transcript if it exists for video (as opposed to using Whisper)
 
 ## Stretch Goals
 - Add channel analysis 
@@ -28,6 +27,11 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Host website 
 - Basic visualization around custom prompts 
 - Add support for longer videos, maybe by breaking up the video
+
+## Bugs 
+- Appears to crash occasionally (could be due to version conflict grpcio-tools/google-api-core/protobuf vs streamlit)
+- Issues with initial package install (mentioned in pyproject.toml)
+- Sometimes transcripts don't download the first time and need to be re-run (potentially fixed with switching to something like yt-dlc instead of yt-dlp?)
 
 ## Completed
 &check; Ability to enter a link and run the processing pipeline 
@@ -47,3 +51,4 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Split each type of analysis into its own flow
 
 &check; Added caching for GPT output
+
