@@ -11,7 +11,7 @@ cached_audio_folder = "cached_audio"
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 assert YOUTUBE_API_KEY is not None
 
-youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY, cache_discovery=False)
 
 def get_channel_id_locally(url):
     """
