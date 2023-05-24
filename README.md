@@ -4,11 +4,6 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 # Open Issues
 - Develop some sort of opinionation/bias measure and way to display it
 - Add diarization -> sometimes the videos play clips within them and that makes the transcript nonsensical without diarization
-- Option to use YouTube transcript if it exists for video (as opposed to using Whisper)
-- Currently whisper and youtube transcript caches are mixed. Might turn off cache for youtube transcript or put it somewhere separate
-- UX for inputting youtube video link and getting information back 
-    - UX for processing multiple videos (such as multiple videos from one channel)
-    - UX to visualize results from query / video analysis 
 - Connect to search tool (similar to stochasticity) for fact checking 
     - Create UX to present identified potentially misleading or false facts and then give option to investigate further
 - Develop a fact checking pipeline 
@@ -23,17 +18,24 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Utilize video title
 
 
-## Stretch Goals
+## Stretch Goals or Low Priority
 - Add channel analysis 
 - Add graph-based visualization (ex: comparisons on factors such as opinions per minute, political lean, misleading facts per 1000 words)
 - Host website 
 - Basic visualization around custom prompts 
 - Add support for longer videos, maybe by breaking up the video
+- UX for inputting youtube video link and getting information back 
+    - UX for processing multiple videos (such as multiple videos from one channel)
+    - UX to visualize results from query / video analysis 
+- Currently YouTube transcripts are not cached, potential for bottleneck there due to YouTube API limits
 
 ## Bugs 
-- Appears to crash occasionally (could be due to version conflict grpcio-tools/google-api-core/protobuf vs streamlit)
 - Issues with initial package install (mentioned in pyproject.toml)
 - Sometimes transcripts don't download the first time and need to be re-run (potentially fixed with switching to something like yt-dlc instead of yt-dlp?)
+- Intermittent crash ("EOF") when getting YouTube video duration
+
+## Closed Bugs
+- Fixed occassional segfault crash by setting cache_discovery to false in youtube API object config
 
 ## Completed
 &check; Ability to enter a link and run the processing pipeline 
@@ -56,6 +58,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 
 &check; Add a bias and opinionation flow that looks for negative claims that are not backed up 
 
+&check; Option to use YouTube transcript if it exists for video (as opposed to using Whisper)
 
 ## Identifying Trustworthiness of a News Piece Notes
 The overarching goal of this system is to be able to find a measure of quality for news pieces and essays. In my view there are two types of good news pieces. The first is a news piece that transmits information about an event in a way that represents both sides (if two sides exist). The second is a news piece that has a "thesis" it is attempting to convey about a situation or event. Examples of this sort of news piece would be ones that are talking about a new piece of legislation and are advocating for or against it. 

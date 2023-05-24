@@ -1,5 +1,7 @@
+from ast import Tuple
 from main import *
 from helpers import *
+from transcripts import *
 from video_processing import *
 
 import json
@@ -162,17 +164,21 @@ Each JSON object in the "targeted_statements" contains a field called "statement
 Each JSON object in the "targeted_statements" contains a field called "summary" which is a short summary of the kinds of demeaning, belittling, or targeting statements that were made about the entity in the transcript. This summary should include an explanation about why this group of statements is considered demeaning, belittling, or targeting.
 Especially focus on statements or groups of statements that are vague attacks, insults, or insinuations that are not backed up by concrete facts. For example if a speaker says "Everyone knows X political candidate has always lied" but does not back it up with specific examples of what they did wrong, that should be included and it should be pointed out in the summary that they made attacks without specific data. 
 If a statement claims a policy or change is negative, a failure, or a disaster, but does not provide specific data to back up the claim, or especially if it makes those claims without explaining what the policy is, it should be included and it should be pointed out in the summary that they made attacks without specific data or without explaining what the policy being attacked is. 
+There should be a "unsubstantied_claims" field in the JSON. This field should be a summarization of the statements that are not backed up by concrete facts and who those statements target.
 If no groups are belittled, targeted, or demeaned, the "targeted_statements" field should be an empty list. 
-All relevant statements should be included. 
+All relevant statements should be included. Ensure the JSON is correctly formatted. 
 """
     results = get_gpt_input_shim(bias_prompt, transcript)
+    print(results)
     results_json = json.loads(results)
-    # st.write(results)
 
     st.write("**Political Bias**")
     st.write(results_json["political_bias"])
-    biases = results_json["targeted_statements"]
+    
+    st.write("**Unsubstantiated Claims**")
+    st.write(results_json["unsubstantiated_claims"])
 
+    biases = results_json["targeted_statements"]
     st.write("**Targeted Statements Against Following Groups:**")
     for bias in biases:
         with st.expander(bias["target"], expanded=False):
@@ -184,6 +190,17 @@ All relevant statements should be included.
     start_time = time.time()
 
     return time.time() - start_time
+
+def transcript_creation_flow(video_id: str) -> str:
+    with st.spinner("Creating transcript for video..."):
+        try: 
+            transcript = create_whisper_transcript(video_id)
+        except: 
+            st.error("Could not create transcript for video.")
+            return
+    return transcript
+
+
 
 def main():
 
@@ -197,7 +214,8 @@ def main():
     fact_checking = False
     bias = False
     button_clicked = False
-
+    
+    allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=False, help="Prefers using YouTube captions instead of generating a transcript manually. Can be faster if a manually generated transcript is available on YouTube and a generated one is not cached.")
 
     st.write("Click button for chosen flow: ")
     col1, col2, col3, col4  = st.columns([1, 1, 1, 1], gap="small")
@@ -235,23 +253,32 @@ def main():
     
     if duration > datetime.timedelta(minutes=10):
         st.warning("Video duration is over 10 minutes, processing time may be extended.")
+    
     elapsed_time_total = 0
 
     # Create or retrieve transcript for video
     transcript = None
     start_time = time.time()
-    with st.spinner("Creating transcript for video..."):
-        try: 
-            transcript = create_whisper_transcript(video_id)
-            elapsed_time = time.time() - start_time
-            elapsed_time_total += elapsed_time
-            st.sidebar.info("Transcript retrieved in {:.2f} seconds.".format(elapsed_time))
-        except: 
-            st.error("Could not create transcript for video.")
-            return
+    transcript_elapsed_time = 0
+    retrieved_transcript = False
+    if allow_youtube_captions:
+        transcript, pulled_from_youtube = get_youtube_str_transcript(video_id)
+        if transcript and pulled_from_youtube:
+            retrieved_transcript = True
+        elif not transcript: 
+            st.info("Could not find manually created YouTube transcript. Creating transcript using Whisper.")
     
+    if not transcript:
+        transcript = transcript_creation_flow(video_id)
+    transcript_elapsed_time = time.time() - start_time
+    st.sidebar.info("Transcript retrieved in {:.2f} seconds.".format(transcript_elapsed_time))
+
     # Display transcript
-    with st.expander("Video Transcript", expanded=False): 
+    transcript_title = "Video Transcript (Generated from Video Audio)"
+    if retrieved_transcript:
+        transcript_title = "Video Transcript (Retrieved From YouTube)"
+
+    with st.expander(transcript_title, expanded=False): 
         st.write(transcript)
 
     # Summarization flow
@@ -268,7 +295,7 @@ def main():
     if bias: 
         flow_elapsed_time = bias_flow(transcript)
     
-    st.sidebar.info("Answer crafted in {:.2f} seconds.".format(elapsed_time))
+    st.sidebar.info("Answer crafted in {:.2f} seconds.".format(transcript_elapsed_time))
     elapsed_time_total += flow_elapsed_time
         
     st.sidebar.info("The total flow took {:.2f} seconds.".format(elapsed_time_total))
