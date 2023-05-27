@@ -28,6 +28,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
     - UX for processing multiple videos (such as multiple videos from one channel)
     - UX to visualize results from query / video analysis 
 - Currently YouTube transcripts are not cached, potential for bottleneck there due to YouTube API limits
+- Currently targeting negative attacks, but could also think about pieces that defend a position or person  
 
 ## Bugs 
 - Issues with initial package install (mentioned in pyproject.toml)
