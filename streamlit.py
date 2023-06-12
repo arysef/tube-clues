@@ -145,7 +145,7 @@ All relevant opinions to check should be included. Do not leave out any relevant
     return time.time() - start_time
 
 def bias_flow(transcript: str):
-    start_time = time.time(
+    start_time = time.time()
     results = get_bias_flow(transcript)
     print(results)
     results_json = json.loads(results)
@@ -164,8 +164,6 @@ def bias_flow(transcript: str):
             st.write("Statements: ")
             for statement in bias["statements"]:
                 st.write("  - \"{}\"".format(statement))
-
-)
 
     return time.time() - start_time
 

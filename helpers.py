@@ -29,8 +29,10 @@ def get_channel_id_from_username(username):
     channels_response = youtube.channels().list(
         part="id",
         forUsername=username,
-        maxResults=1
+        maxResults=5
     ).execute()
+    for channel in channels_response["items"]:
+        print(channel["id"])
 
     if channels_response["items"]:
         return channels_response["items"][0]["id"]
