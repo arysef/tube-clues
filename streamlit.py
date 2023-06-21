@@ -17,9 +17,9 @@ Each of these claims should be a JSON value as well. Each should have a field ca
 The value should also have a value called "supporting_facts" which lists all facts that are facts that can be fact-checked that are used in the video. The supporting facts field should have a "summary" field with a short summarization of the supporting fact along with a "sources" field that lists all statements from the text that make this claim. 
 The value should also have a field called "supporting_opinions" which lists all opinions that are used to support the overarching claim. This can also include things that could be considered facts but that are too abstract to feasibly fact check. Similar to the supporting opinions field this should have a "summary" field and "sources" field which are a summarization of the opinion and the direct quotes from the text. 
 The statements in the sources fields should be included in full.
-Identify all claims that could potentially be misleading or claims and opinions that are too abstract to verify that are in some way used to support the big picture claims. They should be split into the "supporting_facts" and "supporting_opinions" sections. 
 If a fact or opinion is used in more than one overarching claim, it can be included in both of the claims' JSON values. Identify all overarching claims and all of the supporting facts and opinions. 
 Include all relevant overarching claims along with all facts and opinions used to support the claims. 
+Do not skip relevant quotes and give explanations and summaries in full so that a reader who has not read the transcript can understand the points from the JSON being returned alone.
 Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
 """
 
@@ -191,7 +191,7 @@ def main():
     bias = False
     button_clicked = False
     
-    allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=False, help="Prefers using YouTube captions instead of generating a transcript manually. Can be faster if a manually generated transcript is available on YouTube and a generated one is not cached.")
+    allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=False, help="Using existing captions from YouTube can be faster if a manually generated transcript is available and a generated one is not cached in TubeClues.")
 
     st.write("Click button for chosen flow: ")
     col1, col2, col3, col4  = st.columns([1, 1, 1, 1], gap="small")
@@ -223,7 +223,7 @@ def main():
     
     duration = get_video_duration(video_id)
 
-    if duration > datetime.timedelta(minutes=15): 
+    if duration > datetime.timedelta(minutes=30): 
         st.error("Video duration of {} is too long. Maximum video duration is currently 15 minutes.".format(duration))
         return
     

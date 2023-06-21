@@ -4,6 +4,7 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 # Open Issues
 - Develop some sort of opinionation/bias measure and way to display it
 - Add diarization -> sometimes the videos play clips within them and that makes the transcript nonsensical without diarization
+    - Even with diarization, sometimes speakers themselves read a section of text they are quoting: it'd be nice to capture that they're quoting someone else in those scenarios
 - Connect to search tool (similar to stochasticity) for fact checking 
     - Create UX to present identified potentially misleading or false facts and then give option to investigate further
 - Develop a fact checking pipeline 
