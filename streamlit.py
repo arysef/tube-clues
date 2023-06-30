@@ -179,6 +179,7 @@ def transcript_creation_flow(video_id: str) -> str:
 
 
 def main():
+    st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")
 
     st.title("Tubes Clues")
 
