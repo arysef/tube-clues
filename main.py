@@ -2,7 +2,7 @@ from chatgptHelpers.services.openaiwrapper import get_chat_completion
 
 import helpers
 import json
-import prompts
+import redis_wrapper
 from transcripts import create_whisper_transcript
 import video_processing
 
@@ -47,9 +47,18 @@ if __name__ == "__main__":
     print(fox_channel_id)
 
     # print(id)
-    video = video_processing.get_most_recent_video(fox_channel_id)
-    print(video.title)
-    video_id = helpers.extract_video_id("https://www.youtube.com/watch?v=GNRoXCqp6hw&t=152s")
-    results = create_bias_comment(video_id)
-    print(results)
+    # video = video_processing.get_most_recent_video(fox_channel_id)
+    # print(video.title)
+    # video_id = helpers.extract_video_id("https://www.youtube.com/watch?v=GNRoXCqp6hw&t=152s")
+    # results = create_bias_comment(video_id)
+    # print(results)
+    # redis_wrapper.test()
+    lock_name = "test46"
+    my_lock = redis_wrapper.lock_transcript(lock_name)
+    if my_lock:
+        print("Lock acquired")
+        # print("Transcript locked: " + str(redis_wrapper.transcript_locked(lock_name)))
+    # print("Transcript locked: " + str(redis_wrapper.transcript_locked(lock_name)))
+    redis_wrapper.release_transcript_lock(my_lock)
+    # print("Released lock")
 

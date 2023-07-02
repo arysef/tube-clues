@@ -179,10 +179,7 @@ def transcript_creation_flow(video_id: str) -> str:
 
 
 def main():
-    st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")
-
     st.title("Tubes Clues")
-
     st.markdown("""<style>.reportview-container .markdown-text { text-align: center; }</style>""", unsafe_allow_html=True)
     video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
 
@@ -280,4 +277,5 @@ def main():
         st.info("For additional processing, please select an option above.")
 
 if __name__ == '__main__':
+    st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")
     main()

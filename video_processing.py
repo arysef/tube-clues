@@ -44,6 +44,11 @@ def download_video_mp3(video_id: str):
 
     print("Audio download complete: {}".format(filename))
 
+def delete_video_mp3(video_id: str):
+    if not os.path.exists(to_audio_location(video_id)):
+        print("Video audio already non-existent: ".format(id))
+        return 
+    os.remove(to_audio_location(video_id))
 
 def get_most_recent_video(channel_id: str):
     feed_url = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + channel_id
