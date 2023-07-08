@@ -1,6 +1,7 @@
 from chatgptHelpers.services.openaiwrapper import get_chat_completion
-import streamlit as st
+from redis_wrapper import cache_azure_redis
 
+@cache_azure_redis
 def get_gpt_input(question: str, transcript: str) -> str:
 
     messages = [
@@ -8,13 +9,6 @@ def get_gpt_input(question: str, transcript: str) -> str:
         {"role": "user", "content": transcript},
     ]
     return get_chat_completion(messages)
-
-@st.cache_data(persist=True, max_entries=20000)
-def get_gpt_input_cached(prompt: str, text: str) -> str:
-    """
-    This shim is here to cache the GPT input so that we don't have to wait for it to generate every time.
-    """
-    return get_gpt_input(prompt, text)
 
 def get_bias_flow(transcript: str) -> str:
     """
@@ -32,12 +26,12 @@ Each JSON object in the "targeted_statements" contains a field called "statement
 Each JSON object in the "targeted_statements" contains a field called "summary" which is a short summary of the kinds of demeaning, belittling, or targeting statements that were made about the entity in the transcript. This summary should include an explanation about why this group of statements is considered demeaning, belittling, or targeting.
 Especially focus on statements or groups of statements that are vague attacks, insults, or insinuations that are not backed up by concrete facts. For example if a speaker says "Everyone knows X political candidate has always lied" but does not back it up with specific examples of what they did wrong, that should be included and it should be pointed out in the summary that they made attacks without specific data. 
 If a statement claims a policy or change is negative, a failure, or a disaster, but does not provide specific data to back up the claim, or especially if it makes those claims without explaining what the policy is, it should be included and it should be pointed out in the summary that they made attacks and did not provide specific data or did so without explaining what the policy being attacked is. Explain the attack that was made. 
-There should be a "unsubstantied_claims" field in the JSON. This field should be a summarization of the statements that are not backed up by concrete facts and who those statements target.
+There should be a "unsubstantiated_claims" field in the JSON. This field should be a summarization of the statements that are not backed up by concrete facts and who those statements target.
 If no groups are belittled, targeted, or demeaned, the "targeted_statements" field should be an empty list. 
 All relevant statements should be included. No statements should be missed, especially in the targeted statements section. All statements that are included should also include enough context for the reader to understand they are an attack without reading any context outside the "targeted_statements" section. Statements should also be included (along with relevant context) if the attack is not explicit, but is clearly insinuated within the context of the rest of the transcript. 
 Ensure the JSON is correctly formatted. 
 """
-    return get_gpt_input_cached(bias_prompt, transcript)
+    return get_gpt_input(bias_prompt, transcript)
 
 
 

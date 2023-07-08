@@ -51,7 +51,7 @@ def get_embeddings(texts: List[str], model=OPENAI_EMBEDDING_ENGINE) -> List[List
 def get_chat_completion(
     messages,
     model=OPENAI_CHAT_ENGINE,  # use "gpt-4" for better results
-):
+) -> str:
     """
     Generate a chat completion using OpenAI's chat completion API.
 

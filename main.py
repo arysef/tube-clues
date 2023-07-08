@@ -53,12 +53,8 @@ if __name__ == "__main__":
     # results = create_bias_comment(video_id)
     # print(results)
     # redis_wrapper.test()
-    lock_name = "test46"
-    my_lock = redis_wrapper.lock_transcript(lock_name)
-    if my_lock:
-        print("Lock acquired")
-        # print("Transcript locked: " + str(redis_wrapper.transcript_locked(lock_name)))
+
     # print("Transcript locked: " + str(redis_wrapper.transcript_locked(lock_name)))
-    redis_wrapper.release_transcript_lock(my_lock)
+    # print("Transcript locked: " + str(redis_wrapper.transcript_locked(lock_name)))
     # print("Released lock")
 

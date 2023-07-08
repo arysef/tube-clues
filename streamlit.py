@@ -1,5 +1,4 @@
 from ast import Tuple
-from main import *
 from helpers import *
 from prompts import *
 from transcripts import *
@@ -25,7 +24,7 @@ Please return as a JSON value of "overarching_claims". There should be no indend
 
     with st.spinner("Searching video for statements..."):
             start_time = time.time()
-            gpt_feedback = get_gpt_input_cached(summarization_prompt, transcript)
+            gpt_feedback = get_gpt_input(summarization_prompt, transcript)
             
 
             print(gpt_feedback)
@@ -86,7 +85,7 @@ All relevant facts to check (up to 10) should be included.
 """
     with st.container():
         start_time = time.time()
-        results = get_gpt_input_cached(fact_finding_prompt, transcript)
+        results = get_gpt_input(fact_finding_prompt, transcript)
         results_json = json.loads(results)
         st.write("**Ideas and Themes**")
         st.write(results_json["ideas_and_themes"])
@@ -126,7 +125,7 @@ All relevant opinions to check should be included. Do not leave out any relevant
 """
     start_time = time.time()
     with st.container():
-        results = get_gpt_input_cached(opinion_prompt, transcript)
+        results = get_gpt_input(opinion_prompt, transcript)
         results_json = json.loads(results)
         st.write("**Ideas and Themes**")
         st.write(results_json["ideas_and_themes"])
@@ -167,6 +166,7 @@ def bias_flow(transcript: str):
 
     return time.time() - start_time
 
+# Wrapper for create_whisper_transcript that shows text and spinner
 def transcript_creation_flow(video_id: str) -> str:
     with st.spinner("Creating transcript for video..."):
         try: 
@@ -236,11 +236,12 @@ def main():
     transcript_elapsed_time = 0
     retrieved_transcript = False
     if allow_youtube_captions:
-        transcript, pulled_from_youtube = get_youtube_str_transcript(video_id)
-        if transcript and pulled_from_youtube:
-            retrieved_transcript = True
-        elif not transcript: 
-            st.info("Could not find manually created YouTube transcript. Creating transcript using Whisper.")
+        with st.spinner("Retrieving transcript for video from YouTube..."):
+            transcript = get_youtube_str_transcript(video_id)
+            if transcript:
+                retrieved_transcript = True
+            else: 
+                st.info("Could not find manually created YouTube transcript. Creating transcript using Whisper.")
     
     if not transcript:
         transcript = transcript_creation_flow(video_id)
@@ -269,8 +270,8 @@ def main():
     if bias: 
         flow_elapsed_time = bias_flow(transcript)
     
-    st.sidebar.info("Answer crafted in {:.2f} seconds.".format(transcript_elapsed_time))
-    elapsed_time_total += flow_elapsed_time
+    st.sidebar.info("Answer crafted in {:.2f} seconds.".format(flow_elapsed_time))
+    elapsed_time_total = flow_elapsed_time + transcript_elapsed_time
         
     st.sidebar.info("The total flow took {:.2f} seconds.".format(elapsed_time_total))
     if not button_clicked:

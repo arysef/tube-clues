@@ -46,7 +46,7 @@ def download_video_mp3(video_id: str):
 
 def delete_video_mp3(video_id: str):
     if not os.path.exists(to_audio_location(video_id)):
-        print("Video audio already non-existent: ".format(id))
+        print("Video audio already non-existent: ".format(video_id))
         return 
     os.remove(to_audio_location(video_id))
 
