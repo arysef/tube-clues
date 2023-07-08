@@ -8,6 +8,61 @@ import json
 import streamlit as st
 import time 
 
+# Set page configuration and footer
+st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")
+footer = """
+<style>
+html, body {{
+  height: 100%;
+  margin: 0;
+}}
+
+#page-container {{
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}}
+
+main {{
+  flex: 1;
+  padding-bottom: 50px; /* adjust this value to match the height of your footer */
+}}
+footer{{
+    visibility:hidden;
+}}
+.footer {{
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50px; /* adjust this value to match the height of your footer */
+  background-color: transparent;
+  color: #808080;
+  text-align: center;
+  font-size: 0.875em;
+}}
+
+a {{
+  color: #BFBFBF;
+  background-color: transparent;
+  text-decoration: none;
+}}
+
+a:hover, a:active {{
+  color: #0283C3;
+  background-color: transparent;
+  text-decoration: underline;
+}}
+</style>
+
+<div id="page-container">
+    <div class="footer">
+        <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
+    </div>
+</div>
+""".format("Artemis Fowl Version")
+st.markdown(footer,unsafe_allow_html=True)
+
 def summarization_flow(transcript: str):
     summarization_prompt =  """
 The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
@@ -278,5 +333,4 @@ def main():
         st.info("For additional processing, please select an option above.")
 
 if __name__ == '__main__':
-    st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")
     main()
