@@ -78,38 +78,38 @@ Please return as a JSON value of "overarching_claims". There should be no indend
 """
 
     with st.spinner("Searching video for statements..."):
-            start_time = time.time()
-            gpt_feedback = get_gpt_input(summarization_prompt, transcript)
-            
+        start_time = time.time()
+        gpt_feedback = get_gpt_input(summarization_prompt, transcript)
+        
 
-            print(gpt_feedback)
-            gpt_feedback = json.loads(gpt_feedback)
-            claims = gpt_feedback['overarching_claims']
+        print(gpt_feedback)
+        gpt_feedback = json.loads(gpt_feedback)
+        claims = gpt_feedback['overarching_claims']
 
-            # Container for the results
-            with st.container():
-                # Add custom CSS to the container and display the "Results" header
-                st.header("Summarization: ")
-                for claim in claims:
-                    with st.expander(claim["claim"], expanded=False):
-                        st.write("Facts Claimed in Video: ")
-                        facts = []
-                        
-                        for fact in claim["supporting_facts"]:
-                            facts.append("- {}".format(fact["summary"]))
-                            for source in fact["sources"]:
-                                facts.append("    - \"{}\"".format(source))
-                        st.write('\n'.join(facts))
-                        
-                        st.write("Opinions Expressed in Video: ")
-                        opinions = []
+        # Container for the results
+        with st.container():
+            # Add custom CSS to the container and display the "Results" header
+            st.header("Summarization: ")
+            for claim in claims:
+                with st.expander(claim["claim"], expanded=False):
+                    st.write("Facts Claimed in Video: ")
+                    facts = []
+                    
+                    for fact in claim["supporting_facts"]:
+                        facts.append("- {}".format(fact["summary"]))
+                        for source in fact["sources"]:
+                            facts.append("    - \"{}\"".format(source))
+                    st.write('\n'.join(facts))
+                    
+                    st.write("Opinions Expressed in Video: ")
+                    opinions = []
 
-                        for opinion in claim["supporting_opinions"]:
-                            opinions.append("- {}".format(opinion["summary"]))
-                            for source in opinion["sources"]:
-                                opinions.append("    - \"{}\"".format(source))
-                        st.write('\n'.join(opinions))
-            elapsed_time = time.time() - start_time
+                    for opinion in claim["supporting_opinions"]:
+                        opinions.append("- {}".format(opinion["summary"]))
+                        for source in opinion["sources"]:
+                            opinions.append("    - \"{}\"".format(source))
+                    st.write('\n'.join(opinions))
+        elapsed_time = time.time() - start_time
     return elapsed_time
 
 def fact_finding_flow(transcript: str): 
@@ -199,25 +199,37 @@ All relevant opinions to check should be included. Do not leave out any relevant
     return time.time() - start_time
 
 def bias_flow(transcript: str):
-    start_time = time.time()
-    results = get_bias_flow(transcript)
-    print(results)
-    results_json = json.loads(results)
+    with st.spinner("Searching video..."):
+        start_time = time.time()
+        results = get_bias_flow(transcript)
+        print(results)
+        results_json = json.loads(results)
 
-    st.write("**Political Bias**")
-    st.write(results_json["political_bias"])
+        st.write("**Political Bias**")
+        st.write(results_json["political_bias"])
+        
+        st.write("**Unsubstantiated Claims**")
+        st.write(results_json["unsubstantiated_claims"])
+
+        biases = results_json["targeted_statements"]
+        st.write("**Targeted Statements Against Following Groups:**")
+        for bias in biases:
+            with st.expander(bias["target"], expanded=False):
+                st.write("Summary: {}".format(bias["summary"]))
+                st.write("Statements: ")
+                for statement in bias["statements"]:
+                    st.write("  - \"{}\"".format(statement))
+
+        return time.time() - start_time
     
-    st.write("**Unsubstantiated Claims**")
-    st.write(results_json["unsubstantiated_claims"])
 
-    biases = results_json["targeted_statements"]
-    st.write("**Targeted Statements Against Following Groups:**")
-    for bias in biases:
-        with st.expander(bias["target"], expanded=False):
-            st.write("Summary: {}".format(bias["summary"]))
-            st.write("Statements: ")
-            for statement in bias["statements"]:
-                st.write("  - \"{}\"".format(statement))
+def custom_flow(prompt: str, transcript: str):
+    start_time = time.time()
+    with st.spinner("Processing request..."):
+        results = get_custom_flow(prompt, transcript)
+        print(results)
+
+        st.write(results)
 
     return time.time() - start_time
 
@@ -234,12 +246,12 @@ def transcript_creation_flow(video_id: str) -> str:
 
 
 def main():
-    st.title("Tubes Clues")
+    st.title("Tube Clues")
     st.markdown("""<style>.reportview-container .markdown-text { text-align: center; }</style>""", unsafe_allow_html=True)
     video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
 
     summarization = False
-    opinion_count = False
+    custom = False
     fact_checking = False
     bias = False
     button_clicked = False
@@ -252,7 +264,7 @@ def main():
         summarization = st.button("Summarization", use_container_width=True)
     
     with col2:
-        opinion_count = st.button("Opinion Count", use_container_width=True)
+        custom = st.button("Custom Prompt", use_container_width=True)
     
     with col3:
         fact_checking = st.button("Fact Finding", use_container_width=True)
@@ -261,19 +273,30 @@ def main():
         bias = st.button("Bias", use_container_width=True)
 
     # Add other buttons here once they're added
-    button_clicked = summarization | opinion_count | fact_checking | bias
+    
+    custom_prompt = None
+    # custom_run = False
+    # if custom or custom_run: 
+    custom_prompt = st.text_input("Enter custom prompt: ", placeholder="What's the recipe?", key="custom_prompt")
+        # custom_run = st.button("Run", use_container_width=True)
+        # custom = custom_run
+
+    button_clicked = summarization | custom | fact_checking | bias
 
     # This part is required regardless of chosen flow.
-    # Nothing has happened yet, no error message needed (not summarization included because URL needs to be filled when button pressed)
+    # Nothing has happened yet, no error message needed
     if (video_url == "" and not button_clicked):
         return
-
+    
+    if custom and not custom_prompt:
+        print("Prompt required for custom flow.")
+        return
+    
     # Ensure that the URL is valid and that video is short enough to process
     video_id = extract_video_id(video_url)
     if not video_id:
         st.error("Invalid video URL.")
         return
-    
     duration = get_video_duration(video_id)
 
     if duration > datetime.timedelta(minutes=30): 
@@ -316,8 +339,13 @@ def main():
     if summarization:
         flow_elapsed_time = summarization_flow(transcript)
     
-    if opinion_count:
-        flow_elapsed_time = opinion_count_flow(transcript)
+    if custom:
+        flow_elapsed_time = 0 # TODO: Add custom prompt flow
+        if custom_prompt and len(custom_prompt) > 0 and len(custom_prompt) < 100:
+            flow_elapsed_time = custom_flow(transcript, custom_prompt)
+        else: 
+            st.error("Custom prompt must be between 1 and 100 characters.")
+        # flow_elapsed_time = opinion_count_flow(transcript)
     
     if fact_checking:
         flow_elapsed_time = fact_finding_flow(transcript)

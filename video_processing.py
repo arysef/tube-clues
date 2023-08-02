@@ -1,3 +1,4 @@
+from copy import deepcopy
 import feedparser
 from isodate import parse_duration
 import os
@@ -160,7 +161,8 @@ def get_video_duration(video_id) -> datetime.timedelta:
     """
     Get a video duration from the video ID. Uses Google API.
     """
-    request = youtube.videos().list(
+    local_youtube = deepcopy(youtube)
+    request = local_youtube.videos().list(
         part="contentDetails",
         id=video_id
     )

@@ -33,7 +33,8 @@ Ensure the JSON is correctly formatted.
 """
     return get_gpt_input(bias_prompt, transcript)
 
-
-
-
-
+def get_custom_flow(prompt: str, transcript: str) -> str:
+    """
+    Takes a transcript and a question or prompt and attempts to respond or answer.
+    """
+    return get_gpt_input(prompt + ". Results will be displayed in markdown. Feel free to use features like bullets or bolding to make the response easier to read.", transcript)
