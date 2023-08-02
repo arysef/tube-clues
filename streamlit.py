@@ -60,7 +60,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Artemis Fowl Version")
+""".format("Bingo")
 st.markdown(footer,unsafe_allow_html=True)
 
 def summarization_flow(transcript: str):
