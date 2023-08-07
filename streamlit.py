@@ -332,7 +332,8 @@ def main():
         transcript_title = "Video Transcript (Retrieved From YouTube)"
 
     with st.expander(transcript_title, expanded=False): 
-        st.text(transcript)
+        print(transcript)
+        st.write(escape_markdown(transcript))
 
     # Summarization flow
     flow_elapsed_time = 0

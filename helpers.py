@@ -76,3 +76,9 @@ def convert_date(date_str):
     date_obj = datetime.datetime.strptime(date_str, "%m/%d/%Y")
     return date_obj.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+def escape_markdown(text: str) -> str:
+    # Escape special Markdown characters
+    markdown_chars = ['*', '_', '`', '[', ']', '(', ')', '#', '+', '-', '!', '|', '$']
+    for char in markdown_chars:
+        text = text.replace(char, '\\' + char)
+    return text
