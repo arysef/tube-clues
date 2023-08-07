@@ -60,7 +60,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Bingo")
+""".format("Carmen")
 st.markdown(footer,unsafe_allow_html=True)
 
 def summarization_flow(transcript: str):
@@ -256,7 +256,7 @@ def main():
     bias = False
     button_clicked = False
     
-    allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=False, help="Using existing captions from YouTube can be faster if a manually generated transcript is available and a generated one is not cached in TubeClues.")
+    allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=True, help="Using existing captions from YouTube can be faster if a manually generated transcript is available and a generated one is not cached in TubeClues.")
 
     st.write("Click button for chosen flow: ")
     col1, col2, col3, col4  = st.columns([1, 1, 1, 1], gap="small")
@@ -312,12 +312,12 @@ def main():
     transcript = None
     start_time = time.time()
     transcript_elapsed_time = 0
-    retrieved_transcript = False
+    retrieved_transcript_from_captions = False
     if allow_youtube_captions:
         with st.spinner("Retrieving transcript for video from YouTube..."):
             transcript = get_youtube_str_transcript(video_id)
             if transcript:
-                retrieved_transcript = True
+                retrieved_transcript_from_captions = True
             else: 
                 st.info("Could not find manually created YouTube transcript. Creating transcript using Whisper.")
     
@@ -328,11 +328,11 @@ def main():
 
     # Display transcript
     transcript_title = "Video Transcript (Generated from Video Audio)"
-    if retrieved_transcript:
+    if retrieved_transcript_from_captions:
         transcript_title = "Video Transcript (Retrieved From YouTube)"
 
     with st.expander(transcript_title, expanded=False): 
-        st.write(transcript)
+        st.text(transcript)
 
     # Summarization flow
     flow_elapsed_time = 0
