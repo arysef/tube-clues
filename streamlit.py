@@ -64,23 +64,9 @@ a:hover, a:active {{
 st.markdown(footer,unsafe_allow_html=True)
 
 def summarization_flow(transcript: str):
-    summarization_prompt =  """
-The user will send messages that contain the text to analyze. You will return a JSON object with the findings. 
-Your role is to identify any overarching or "big picture" claims that are being promoted in the text. These will be returned as a JSON value called "overarching_claims".
-Each of these claims should be a JSON value as well. Each should have a field called "claim" which is a summarization of what the claim is. 
-The value should also have a value called "supporting_facts" which lists all facts that are facts that can be fact-checked that are used in the video. The supporting facts field should have a "summary" field with a short summarization of the supporting fact along with a "sources" field that lists all statements from the text that make this claim. 
-The value should also have a field called "supporting_opinions" which lists all opinions that are used to support the overarching claim. This can also include things that could be considered facts but that are too abstract to feasibly fact check. Similar to the supporting opinions field this should have a "summary" field and "sources" field which are a summarization of the opinion and the direct quotes from the text. 
-The statements in the sources fields should be included in full.
-If a fact or opinion is used in more than one overarching claim, it can be included in both of the claims' JSON values. Identify all overarching claims and all of the supporting facts and opinions. 
-Include all relevant overarching claims along with all facts and opinions used to support the claims. 
-Do not skip relevant quotes and give explanations and summaries in full so that a reader who has not read the transcript can understand the points from the JSON being returned alone.
-Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
-"""
-
     with st.spinner("Searching video for statements..."):
         start_time = time.time()
-        gpt_feedback = get_gpt_input(summarization_prompt, transcript)
-        
+        gpt_feedback = get_summarization_input(transcript)        
 
         print(gpt_feedback)
         gpt_feedback = json.loads(gpt_feedback)
@@ -112,35 +98,10 @@ Please return as a JSON value of "overarching_claims". There should be no indend
         elapsed_time = time.time() - start_time
     return elapsed_time
 
-def fact_finding_flow(transcript: str): 
-    # fact_finding_prompt = """
-    # You are an expert fact checking assistant. Your job will be to find the most valuable facts to fact check in the video. I want you to find the 5 to 10 most valuable facts to fact check. 
-    # These should be facts that are important to the video and that are not too abstract to feasibly fact check. If there are 
-    # """
-    fact_finding_prompt = """
-You are an assistant to an adversarial political fact checker. The user's messages will be transcripts from videos.
-Your role is to find the most valuable facts to fact check in the given transcript. 
-You should carefully analyze what facts are worth checking by weighing the importance of the fact to the video and the feasibility of fact checking the claim.
-This should be done by first identifying the main claims in the video and the underlying political or ideological themes that the video is promoting and then choosing the facts that can be most feasibly checked and are most likely to undercut the the conclusions, themes, opinions, and ideologies of the video is proven incorrect. 
-In weighing the priority of the fact for fact checking, you should consider a number of factors: 
-    - You should consider the overall argument of the video and determine how important the fact is to the argument.
-    - The political biases of the speaker of the video. For example if the speaker appears to be conservative, conservative talking points should be paid particular attention. Similarly, if the speaker appears to be liberal, liberal talking points should be paid particular attenion. 
-    - You should consider how important the fact is to the video's conclusion.
-    - You should consider the underlying ideas and biases that the video is promoting and determine how important the fact is to those ideas.
-    - Offhand comments about topics that are not directly related to the conclusion but are relevant to the underlying tone and "slant" of the video should be considered.
-    - You should consider how feasible it might be to fact check the claim using Google searches.
-    - You should avoid recommending facts to check that are frivolous and not relevant to the video's point, tone, opinions, or conclusion.
-    - You should recommend the facts that are most likely to cut the legs out from the video's argument and tone if they are proven false.
-The result should be a JSON.
-The first value in the JSON should be a "ideas_and_themes" field. This field should be a paragraph explaining the speaker's political slant, the conclusions they are promoting both directly and indirectly, and any biases which the speaker is displaying in the text.
-There should also be a JSON field called "facts_to_check" that contains a list of values representing the facts that should be checked.
-Each fact should have a field called "fact" which is a summarization of the fact, it should also have a field called "sources" which is a list of all statements from the text that make this claim.
-The statements in the sources fields should be included in full. Any required explanation can be included in other additional fields which are not the fields mentioned above. 
-All relevant facts to check (up to 10) should be included.
-"""
+def fact_finding_flow(transcript: str):
     with st.container():
         start_time = time.time()
-        results = get_gpt_input(fact_finding_prompt, transcript)
+        results = get_fact_finding_input(transcript)
         results_json = json.loads(results)
         st.write("**Ideas and Themes**")
         st.write(results_json["ideas_and_themes"])
@@ -157,30 +118,9 @@ All relevant facts to check (up to 10) should be included.
     return time.time() - start_time
 
 def opinion_count_flow(transcript: str):
-    opinion_prompt = """
-   You are an expert assistant to an adversarial political analyst. The user's messages will be transcripts from videos.
-Your role is to find all the unsupported opinions in the given transcript. 
-You should carefully analyze what opinions are worth mentioning by weighing the importance of the opinion to the video.
-This should be done by first identifying the main claims in the video and the underlying political or ideological themes that the video is promoting and then choosing the opinions that are not supported by concrete facts and are most likely to undercut the the conclusions, themes, opinions, and ideologies of the video if proven incorrect. 
-In weighing the priority of the opinion, you should consider a number of factors: 
-    - You should consider the overall argument of the video and determine how important the opinion is to the argument.
-    - The political biases of the speaker of the video. For example if the speaker appears to be conservative, conservative talking points should be paid particular attention. Similarly, if the speaker appears to be liberal, liberal talking points should be paid particular attenion. 
-    - You should consider how important the opinion is to the video's conclusion.
-    - You should consider the underlying ideas and biases that the video is promoting and determine how important the opinion is to those ideas. 
-    - Offhand comments about topics that are not directly related to the conclusion but are relevant to the underlying tone and "slant" of the video should be considered.
-    - You should consider how feasible it might be to fact check the claim using Google searches. If it is something that could not be feasibly checked and is not logically supported by hard facts that are described in the video, it is likely worth including. 
-    - You should avoid recommending opinions to check that are frivolous and not relevant to the video's point, tone, opinions, underlying political views, or conclusion.
-The result should be a JSON.
-The first value in the JSON should be a "ideas_and_themes" field. This field should be a paragraph explaining the speaker's political slant, the conclusions they are promoting both directly and indirectly, and any biases which the speaker is displaying in the text.
-There should be a JSON field called "political_biases". This field should be a short paragraph explaining political biases and lean that the speaker is displaying in the transcript. 
-There should also be a JSON field called "opinions" that contains a list of values representing the opinions that were identified.
-Each opinion should have a field called "opinion" which is a summarization of the opinion, it should also have a field called "sources" which is a list of all statements from the text that make this claim.
-The statements in the sources fields should be included in full. Any required explanation can be included in other additional fields which are not the fields mentioned above. 
-All relevant opinions to check should be included. Do not leave out any relevant opinions.
-"""
     start_time = time.time()
     with st.container():
-        results = get_gpt_input(opinion_prompt, transcript)
+        results = get_opinion_input(transcript)
         results_json = json.loads(results)
         st.write("**Ideas and Themes**")
         st.write(results_json["ideas_and_themes"])
@@ -342,10 +282,10 @@ def main():
     
     if custom:
         flow_elapsed_time = 0 # TODO: Add custom prompt flow
-        if custom_prompt and len(custom_prompt) > 0 and len(custom_prompt) < 100:
+        if custom_prompt and len(custom_prompt) > 0 and len(custom_prompt) < 250:
             flow_elapsed_time = custom_flow(transcript, custom_prompt)
         else: 
-            st.error("Custom prompt must be between 1 and 100 characters.")
+            st.error("Custom prompt must be between 1 and 250 characters.")
         # flow_elapsed_time = opinion_count_flow(transcript)
     
     if fact_checking:
