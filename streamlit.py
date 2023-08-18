@@ -15,6 +15,7 @@ footer = """
 html, body {{
   height: 100%;
   margin: 0;
+  padding: 0;
 }}
 
 #page-container {{
@@ -25,17 +26,15 @@ html, body {{
 
 main {{
   flex: 1;
-  padding-bottom: 50px; /* adjust this value to match the height of your footer */
 }}
 footer{{
     visibility:hidden;
 }}
 .footer {{
-  position: fixed;
+  position: static;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 50px; /* adjust this value to match the height of your footer */
   background-color: transparent;
   color: #808080;
   text-align: center;
@@ -60,8 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Carmen")
-st.markdown(footer,unsafe_allow_html=True)
+""".format("Diego")
 
 def summarization_flow(transcript: str):
     with st.spinner("Searching video for statements..."):
@@ -192,14 +190,13 @@ def main():
 
     summarization = False
     custom = False
-    fact_checking = False
     bias = False
     button_clicked = False
     
     allow_youtube_captions = st.checkbox("Prefer YouTube Caption Usage", value=True, help="Using existing captions from YouTube can be faster if a manually generated transcript is available and a generated one is not cached in TubeClues.")
 
     st.write("Click button for chosen flow: ")
-    col1, col2, col3, col4  = st.columns([1, 1, 1, 1], gap="small")
+    col1, col2, col3  = st.columns([1, 1, 1], gap="small")
     with col1: 
         summarization = st.button("Summarization", use_container_width=True)
     
@@ -207,9 +204,6 @@ def main():
         custom = st.button("Custom Prompt", use_container_width=True)
     
     with col3:
-        fact_checking = st.button("Fact Finding", use_container_width=True)
-    
-    with col4:
         bias = st.button("Bias", use_container_width=True)
 
     # Add other buttons here once they're added
@@ -221,7 +215,7 @@ def main():
         # custom_run = st.button("Run", use_container_width=True)
         # custom = custom_run
 
-    button_clicked = summarization | custom | fact_checking | bias
+    button_clicked = summarization | custom | bias
 
     # This part is required regardless of chosen flow.
     # Nothing has happened yet, no error message needed
@@ -258,8 +252,6 @@ def main():
             transcript = get_youtube_str_transcript(video_id)
             if transcript:
                 retrieved_transcript_from_captions = True
-            else: 
-                st.info("Could not find manually created YouTube transcript. Creating transcript using Whisper.")
     
     if not transcript:
         transcript = transcript_creation_flow(video_id)
@@ -288,9 +280,6 @@ def main():
             st.error("Custom prompt must be between 1 and 250 characters.")
         # flow_elapsed_time = opinion_count_flow(transcript)
     
-    if fact_checking:
-        flow_elapsed_time = fact_finding_flow(transcript)
-    
     if bias: 
         flow_elapsed_time = bias_flow(transcript)
     
@@ -303,3 +292,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    st.markdown(footer,unsafe_allow_html=True)

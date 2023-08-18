@@ -60,6 +60,7 @@ Please return as a JSON value of "overarching_claims". There should be no indend
 """
     return get_gpt_input(summarization_prompt, transcript)
 
+# Currently unused, potentially useful later for fact-checking 
 def get_fact_finding_input(transcript: str) -> str: 
     fact_finding_prompt = """
 You are an assistant to an adversarial political fact checker. The user's messages will be transcripts from videos.
