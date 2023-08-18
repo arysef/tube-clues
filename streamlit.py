@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Diego")
+""".format("Elise")
 
 def summarization_flow(transcript: str):
     with st.spinner("Searching video for statements..."):
@@ -208,13 +208,12 @@ def main():
 
     # Add other buttons here once they're added
     
-    custom_prompt = None
-    # custom_run = False
-    # if custom or custom_run: 
+    custom_prompt = ""
+    prev_qry = ""
     custom_prompt = st.text_input("Enter custom prompt: ", placeholder="What's the recipe?", key="custom_prompt")
-        # custom_run = st.button("Run", use_container_width=True)
-        # custom = custom_run
-
+    if custom or (prev_qry != custom_prompt):
+        prev_qry = custom_prompt
+        custom = True
     button_clicked = summarization | custom | bias
 
     # This part is required regardless of chosen flow.
@@ -222,7 +221,7 @@ def main():
     if (video_url == "" and not button_clicked):
         return
     
-    if custom and not custom_prompt:
+    if custom and not prev_qry:
         print("Prompt required for custom flow.")
         return
     
@@ -272,10 +271,10 @@ def main():
     if summarization:
         flow_elapsed_time = summarization_flow(transcript)
     
-    if custom:
+    if custom and not summarization and not bias:
         flow_elapsed_time = 0 # TODO: Add custom prompt flow
-        if custom_prompt and len(custom_prompt) > 0 and len(custom_prompt) < 250:
-            flow_elapsed_time = custom_flow(transcript, custom_prompt)
+        if prev_qry and len(prev_qry) > 0 and len(prev_qry) < 250:
+            flow_elapsed_time = custom_flow(transcript, prev_qry)
         else: 
             st.error("Custom prompt must be between 1 and 250 characters.")
         # flow_elapsed_time = opinion_count_flow(transcript)

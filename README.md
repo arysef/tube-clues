@@ -69,6 +69,8 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 
 &check; Host website 
 
+&check; Custom prompt support
+
 ## Identifying Trustworthiness of a News Piece Notes
 The overarching goal of this system is to be able to find a measure of quality for news pieces and essays. In my view there are two types of good news pieces. The first is a news piece that transmits information about an event in a way that represents both sides (if two sides exist). The second is a news piece that has a "thesis" it is attempting to convey about a situation or event. Examples of this sort of news piece would be ones that are talking about a new piece of legislation and are advocating for or against it. 
 
