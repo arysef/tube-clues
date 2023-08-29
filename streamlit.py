@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Elise")
+""".format("Fizz")
 
 def summarization_flow(transcript: str):
     with st.spinner("Searching video for statements..."):
@@ -232,7 +232,7 @@ def main():
         return
     duration = get_video_duration(video_id)
 
-    if duration > datetime.timedelta(minutes=30): 
+    if duration > datetime.timedelta(minutes=25): 
         st.error("Video duration of {} is too long. Maximum video duration is currently 15 minutes.".format(duration))
         return
     
