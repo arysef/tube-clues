@@ -82,11 +82,7 @@ def get_chat_completion(
     # print(f"Completion: {completion}")
     return completion.replace("$", "\\$")
 
-def custom_get_chat_completion(question: str, transcript: str) -> str:
-    messages = [
-        {"role": "system", "content": question},
-        {"role": "user", "content": transcript},
-    ]
+def streaming_get_chat_completion(messages: str) -> str:
     response = openai.ChatCompletion.create(
         model=OPENAI_CHAT_ENGINE,
         messages=messages,

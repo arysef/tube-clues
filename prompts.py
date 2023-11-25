@@ -1,5 +1,5 @@
-from chatgptHelpers.services.openaiwrapper import get_chat_completion, custom_get_chat_completion
-from redis_wrapper import cache_azure_redis
+from chatgptHelpers.services.openaiwrapper import get_chat_completion, streaming_get_chat_completion
+from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
 import openai
 
 @cache_azure_redis
@@ -10,6 +10,15 @@ def get_gpt_input(question: str, transcript: str) -> str:
         {"role": "user", "content": transcript},
     ]
     return get_chat_completion(messages)
+
+@stream_cache_azure_redis
+def get_streaming_gpt_input(question: str, transcript: str) -> str:
+    messages = [
+        {"role": "system", "content": question},
+        {"role": "user", "content": transcript},
+    ]
+    for result in streaming_get_chat_completion(messages):
+        yield result
 
 def get_bias_flow(transcript: str) -> str:
     """
@@ -44,9 +53,8 @@ def get_custom_flow(prompt: str, transcript: str) -> str:
     If the information needed for the answer is not in the transcript, then say the answer is not availabe from the transcript.
     Results will be displayed in markdown. Feel free to use features like bullets or bolding to make the response easier to read.
     """
-    for completion_text in custom_get_chat_completion(prompt + prompt_addition, transcript):
+    for completion_text in get_streaming_gpt_input(prompt + prompt_addition, transcript):
         yield completion_text
-    # return get_gpt_input(prompt + prompt_addition, transcript)
 
 def get_summarization_input(transcript: str) -> str: 
     summarization_prompt =  """
