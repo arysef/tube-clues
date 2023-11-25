@@ -5,7 +5,8 @@ import os
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from time import time
 OPENAI_EMBEDDING_ENGINE = os.environ.get("OPENAI_EMBEDDING_ENGINE")
-OPENAI_CHAT_ENGINE = "gpt-4"#os.environ.get("OPENAI_CHAT_ENGINE")
+OPENAI_CHAT_ENGINE = "gpt-4-1106-preview"
+# OPENAI_CHAT_ENGINE = "gpt-4"
 # OPENAI_API_BASE = os.environ.get("OPENAI_RESOURCE_ENDPOINT")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 # OPENAI_API_VERSION = os.environ.get("OPENAI_API_VERSION")
@@ -79,7 +80,26 @@ def get_chat_completion(
     choices = response["choices"]  # type: ignore
     completion = choices[0].message.content.strip()
     # print(f"Completion: {completion}")
-    return completion
+    return completion.replace("$", "\\$")
+
+def custom_get_chat_completion(question: str, transcript: str) -> str:
+    messages = [
+        {"role": "system", "content": question},
+        {"role": "user", "content": transcript},
+    ]
+    response = openai.ChatCompletion.create(
+        model=OPENAI_CHAT_ENGINE,
+        messages=messages,
+        stream=True,
+    )
+
+    completion_text = ''
+    for event in response:
+        if 'content' in event['choices'][0]['delta']:
+            event_text = event['choices'][0]['delta']['content']
+            event_text = event_text.replace("$", "\\$")
+            completion_text += event_text
+            yield completion_text
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_whisper_transcript(file_path, model="whisper-1"):

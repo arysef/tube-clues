@@ -61,6 +61,7 @@ a:hover, a:active {{
 </div>
 """.format("Fizz")
 
+# Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
     try:
         return json.loads(json_data), None
@@ -171,10 +172,10 @@ def bias_flow(transcript: str):
 def custom_flow(prompt: str, transcript: str):
     start_time = time.time()
     with st.spinner("Processing request..."):
-        results = get_custom_flow(prompt, transcript)
-        print(results)
-
-        st.write(results)
+        stream_text = st.markdown("")
+        for completion_text in get_custom_flow(prompt, transcript):
+            stream_text.markdown(completion_text)
+            time.sleep(0.05)
 
     return time.time() - start_time
 
@@ -187,7 +188,6 @@ def transcript_creation_flow(video_id: str) -> str:
             st.error("Could not create transcript for video.")
             return
     return transcript
-
 
 
 def main():
