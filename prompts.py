@@ -58,7 +58,6 @@ Include all relevant overarching claims along with all facts and opinions used t
 Do not skip relevant quotes and give explanations and summaries in full so that a reader who has not read the transcript can understand the points from the JSON being returned alone.
 Please return as a JSON value of "overarching_claims". There should be no indendation for the JSON formatting. 
 """
-    return "Garbled"
     return get_gpt_input(summarization_prompt, transcript)
 
 # Currently unused, potentially useful later for fact-checking 
