@@ -3,8 +3,6 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 
 # Open Issues
 - Develop some sort of opinionation/bias measure and way to display it
-- Add way to prevent multiple clicks from causing multiple requests
-- Start deleting audio once done with it
 - Add diarization -> sometimes the videos play clips within them and that makes the transcript nonsensical without diarization
     - Even with diarization, sometimes speakers themselves read a section of text they are quoting: it'd be nice to capture that they're quoting someone else in those scenarios
 - Connect to search tool (similar to stochasticity) for fact checking 
@@ -20,7 +18,6 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 - Possibly return a list of related articles from other news sources
 - Utilize video title
 - Add error telemetry
-- Version overlaps response when scrolling
 
 
 ## Stretch Goals or Low Priority
@@ -70,6 +67,14 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Host website 
 
 &check; Custom prompt support
+
+&check; Start deleting audio once done with it
+
+&check; Add way to prevent multiple clicks from causing multiple requests
+
+&check; Avoid version overlapping response when response is long
+
+&check; When response JSON can't be decoded, print the raw JSON on the page instead of crashing
 
 ## Identifying Trustworthiness of a News Piece Notes
 The overarching goal of this system is to be able to find a measure of quality for news pieces and essays. In my view there are two types of good news pieces. The first is a news piece that transmits information about an event in a way that represents both sides (if two sides exist). The second is a news piece that has a "thesis" it is attempting to convey about a situation or event. Examples of this sort of news piece would be ones that are talking about a new piece of legislation and are advocating for or against it. 

@@ -61,105 +61,112 @@ a:hover, a:active {{
 </div>
 """.format("Fizz")
 
+def parse_json_data(json_data: str):
+    try:
+        return json.loads(json_data), None
+    except json.JSONDecodeError as e:
+        st.error(f"Could not parse results from model.")
+        with st.expander("Error Details", expanded=False):
+            st.write(e)
+        st.write("Raw JSON From Model: ")
+        st.write(json_data)
+        return None, str(e)
+
 def summarization_flow(transcript: str):
     with st.spinner("Searching video for statements..."):
         start_time = time.time()
-        gpt_feedback = get_summarization_input(transcript)        
+        raw_summarization = get_summarization_input(transcript)
+        gpt_feedback, error = parse_json_data(raw_summarization)
+        if error:
+            return time.time() - start_time
 
-        print(gpt_feedback)
-        gpt_feedback = json.loads(gpt_feedback)
         claims = gpt_feedback['overarching_claims']
-
-        # Container for the results
         with st.container():
-            # Add custom CSS to the container and display the "Results" header
             st.header("Summarization: ")
             for claim in claims:
                 with st.expander(claim["claim"], expanded=False):
                     st.write("Facts Claimed in Video: ")
-                    facts = []
-                    
                     for fact in claim["supporting_facts"]:
-                        facts.append("- {}".format(fact["summary"]))
+                        st.write(f"- {fact['summary']}")
                         for source in fact["sources"]:
-                            facts.append("    - \"{}\"".format(source))
-                    st.write('\n'.join(facts))
-                    
+                            st.write(f"    - \"{source}\"")
                     st.write("Opinions Expressed in Video: ")
-                    opinions = []
-
                     for opinion in claim["supporting_opinions"]:
-                        opinions.append("- {}".format(opinion["summary"]))
+                        st.write(f"- {opinion['summary']}")
                         for source in opinion["sources"]:
-                            opinions.append("    - \"{}\"".format(source))
-                    st.write('\n'.join(opinions))
+                            st.write(f"    - \"{source}\"")
+
+
         elapsed_time = time.time() - start_time
     return elapsed_time
 
 def fact_finding_flow(transcript: str):
     with st.container():
         start_time = time.time()
-        results = get_fact_finding_input(transcript)
-        results_json = json.loads(results)
-        st.write("**Ideas and Themes**")
-        st.write(results_json["ideas_and_themes"])
-        st.write("**Facts to Check:**")
+        raw = get_fact_finding_input(transcript)
+        results, error = parse_json_data(raw)
+        if error: 
+            return time.time() - start_time
 
-        facts_to_check = results_json["facts_to_check"]
-        for fact in facts_to_check:
+        st.write("**Ideas and Themes**")
+        st.write(results["ideas_and_themes"])
+        st.write("**Facts to Check:**")
+        for fact in results["facts_to_check"]:
             with st.expander(fact["fact"], expanded=False):
                 st.write("Sources: ")
                 for source in fact["sources"]:
-                    st.write("  - \"{}\"".format(source))
-                
-        # st.write(results)
-    return time.time() - start_time
+                    st.write(f"  - \"{source}\"")
+        
+        elapsed_time = time.time() - start_time
+    return elapsed_time
 
 def opinion_count_flow(transcript: str):
     start_time = time.time()
     with st.container():
-        results = get_opinion_input(transcript)
-        results_json = json.loads(results)
+        raw = get_opinion_input(transcript)
+        results, error = parse_json_data(raw)
+        if error:
+            return time.time() - start_time
+
+        # Proceed if no error
         st.write("**Ideas and Themes**")
-        st.write(results_json["ideas_and_themes"])
+        st.write(results["ideas_and_themes"])
         st.write("**Political Biases**")
-        st.write(results_json["political_biases"])
+        st.write(results["political_biases"])
         st.write("**Opinions:**")
 
-        facts_to_check = results_json["opinions"]
-        for fact in facts_to_check:
-            with st.expander(fact["opinion"], expanded=False):
+        for opinion in results["opinions"]:
+            with st.expander(opinion["opinion"], expanded=False):
                 st.write("Sources: ")
-                for source in fact["sources"]:
-                    st.write("  - \"{}\"".format(source))
-                
-   
+                for source in opinion["sources"]:
+                    st.write(f"  - \"{source}\"")
+
     return time.time() - start_time
 
 def bias_flow(transcript: str):
     with st.spinner("Searching video..."):
         start_time = time.time()
-        results = get_bias_flow(transcript)
-        print(results)
-        results_json = json.loads(results)
+        raw = get_bias_flow(transcript)
+        results, error = parse_json_data(raw)
+        if error:
+            return time.time() - start_time
 
+        # Proceed if no error
         st.write("**Political Bias**")
-        st.write(results_json["political_bias"])
+        st.write(results["political_bias"])
         
         st.write("**Unsubstantiated Claims**")
-        st.write(results_json["unsubstantiated_claims"])
+        st.write(results["unsubstantiated_claims"])
 
-        biases = results_json["targeted_statements"]
         st.write("**Targeted Statements Against Following Groups:**")
-        for bias in biases:
+        for bias in results["targeted_statements"]:
             with st.expander(bias["target"], expanded=False):
-                st.write("Summary: {}".format(bias["summary"]))
+                st.write(f"Summary: {bias['summary']}")
                 st.write("Statements: ")
                 for statement in bias["statements"]:
-                    st.write("  - \"{}\"".format(statement))
+                    st.write(f"  - \"{statement}\"")
 
         return time.time() - start_time
-    
 
 def custom_flow(prompt: str, transcript: str):
     start_time = time.time()
