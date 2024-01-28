@@ -10,7 +10,7 @@ from redis_wrapper import cache_azure_redis
 from video_processing import *
 
 @cache_azure_redis
-def create_whisper_transcript(id: str, default_to_cached=True) -> str:
+def create_whisper_transcript(id: str) -> str:
     download_video_mp3(id)
     try:
         transcript = get_whisper_transcript(to_audio_location(id))

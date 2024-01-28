@@ -59,10 +59,11 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Good@Bad@Us")
+""".format("HONEST")
 
 # Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
+    json_data = json_data.lstrip('\ufeff').strip()
     try:
         return json.loads(json_data), None
     except json.JSONDecodeError as e:
@@ -270,7 +271,7 @@ def main():
         transcript_title = "Video Transcript (Retrieved From YouTube)"
 
     with st.expander(transcript_title, expanded=False): 
-        print(transcript)
+        # print(transcript)
         st.write(escape_markdown(transcript))
 
     # Summarization flow

@@ -5,7 +5,7 @@ import os
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from time import time
 OPENAI_EMBEDDING_ENGINE = os.environ.get("OPENAI_EMBEDDING_ENGINE")
-OPENAI_CHAT_ENGINE = "gpt-4-1106-preview"
+OPENAI_CHAT_ENGINE = "gpt-4-0125-preview"
 # OPENAI_CHAT_ENGINE = "gpt-4"
 # OPENAI_API_BASE = os.environ.get("OPENAI_RESOURCE_ENDPOINT")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -73,6 +73,7 @@ def get_chat_completion(
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
+        response_format={ "type": "json_object" }
     )
     end_time = time()
     print(f"Chat completion finished in {end_time-start_time:.2f} seconds.")
