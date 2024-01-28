@@ -72,6 +72,7 @@ def parse_json_data(json_data: str):
             st.write(e)
         st.write("Raw JSON From Model: ")
         st.write(json_data)
+        print(json_data)
         return None, str(e)
 
 def summarization_flow(transcript: str):
