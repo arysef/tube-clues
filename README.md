@@ -14,7 +14,6 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
         - This is a lot of steps though so I'll try transcripts->formulate search queries, skipping list of facts at some point
     - Many of these facts are so complicated lol 
     - Display in UX
-- Add text streaming for GPT results
 - Possibly return a list of related articles from other news sources
 - Utilize video title
 - Add error telemetry
@@ -34,7 +33,6 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 ## Bugs 
 - Issues with initial package install (mentioned in pyproject.toml)
 - Sometimes transcripts don't download the first time and need to be re-run (potentially fixed with switching to something like yt-dlc instead of yt-dlp?)
-- Intermittent crash ("EOF") when getting YouTube video duration
 
 ## Closed Bugs
 - Fixed occassional segfault crash by setting cache_discovery to false in youtube API object config
@@ -75,6 +73,10 @@ The purpose of this repository is a pipeline for YouTube video analysis and spec
 &check; Avoid version overlapping response when response is long
 
 &check; When response JSON can't be decoded, print the raw JSON on the page instead of crashing
+
+&check; Add text streaming for GPT results
+
+&check; Longer transcripts and parallelized transcript processing (videos up to 1 hour)
 
 ## Identifying Trustworthiness of a News Piece Notes
 The overarching goal of this system is to be able to find a measure of quality for news pieces and essays. In my view there are two types of good news pieces. The first is a news piece that transmits information about an event in a way that represents both sides (if two sides exist). The second is a news piece that has a "thesis" it is attempting to convey about a situation or event. Examples of this sort of news piece would be ones that are talking about a new piece of legislation and are advocating for or against it. 

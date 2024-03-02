@@ -1,3 +1,4 @@
+# Mostly just for trying out things and impromptu testing. Real main is in streamlit.py
 from chatgptHelpers.services.openaiwrapper import get_chat_completion
 
 import helpers
@@ -5,7 +6,6 @@ import json
 import redis_wrapper
 from transcripts import create_whisper_transcript
 import video_processing
-
 
 def create_bias_comment(video_id:str) -> str: 
     transcript = create_whisper_transcript(video_id)
@@ -34,8 +34,6 @@ def create_bias_comment(video_id:str) -> str:
     statements += "*Overall Bias:* " + results_json["political_bias"] + "\n"
 
     return statements
-    
-
 
 
 if __name__ == "__main__":

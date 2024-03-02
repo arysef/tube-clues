@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("HONEST")
+""".format("idontwannabeyouanymore")
 
 # Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
@@ -186,6 +186,9 @@ def transcript_creation_flow(video_id: str) -> str:
     with st.spinner("Creating transcript for video..."):
         try: 
             transcript = create_whisper_transcript(video_id)
+            if not transcript:
+                st.error("Could not create transcript for video.")
+                return
         except: 
             st.error("Could not create transcript for video.")
             return
@@ -241,7 +244,7 @@ def main():
         return
     duration = get_video_duration(video_id)
 
-    if duration > datetime.timedelta(minutes=25): 
+    if duration > datetime.timedelta(minutes=60): 
         st.error("Video duration of {} is too long. Maximum video duration is currently 15 minutes.".format(duration))
         return
     

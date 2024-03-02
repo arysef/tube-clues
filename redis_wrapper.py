@@ -41,11 +41,13 @@ def cache_azure_redis(func):
                     # Compute the result and cache it
                     print("Computing result")
                     result = func(*args, **kwargs)
-                    value_cache.setex(key, DEFAULT_EXPIRATION, result)  # Assuming the result is already a string
+                    if result: 
+                        value_cache.setex(key, DEFAULT_EXPIRATION, result)  # Assuming the result is already a string
                     return result
             finally:
                 # Always make sure to release the lock, even if an error occurred while computing the function
-                lock.release()
+                if lock.locked():
+                    lock.release()
     return wrapper
 
 def stream_cache_azure_redis(func):
