@@ -51,20 +51,26 @@ def to_transcript_location(id: str) -> str:
 
 def extract_video_id(youtube_link):
     try:
-        # Regular expression to match YouTube URL and extract the video ID
+        # Enhanced regular expression to match various YouTube URL formats including URLs with additional query parameters
         pattern = re.compile(
-            r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)([\w-]+)'
+            r'(?:https?://)?(?:www\.|m\.)?youtube\.com/watch.*?v=([\w-]+)|youtu\.be/([\w-]+)'
         )
         match = pattern.search(youtube_link)
         
         if not match:
             raise ValueError("Invalid YouTube link")
 
-        video_id = match.group(1)
+        # Using a loop to find the first non-None group (either from the main URL or the shortened youtu.be format)
+        video_id = next((group for group in match.groups() if group is not None), None)
+        
+        if not video_id:
+            raise ValueError("No video ID found in the link")
+
         return video_id
     except Exception as e:
         print(f"Error: {e}")
         return None
+
     
 def convert_date(date_str):
     """

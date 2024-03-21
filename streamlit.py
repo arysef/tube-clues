@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("idontwannabeyouanymore")
+""".format("Jeremy")
 
 # Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
