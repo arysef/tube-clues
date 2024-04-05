@@ -58,31 +58,7 @@ def get_most_recent_video(channel_id: str):
     
     most_recent_video = feed.entries[0]
     return most_recent_video
-    
-    if most_recent_video.id != last_video_id:
-        print(f"New video uploaded: {most_recent_video.title}")
-        return most_recent_video.id
 
-    return last_video_id
-
-
-# Initialize last_video_id to None
-# last_video_id = None
-
-# def check_for_new_videos(channel_id: str):
-#     request = youtube.search().list(
-#         part="snippet",
-#         channelId=channel_id,
-#         order="date", # ensure the latest videos are returned
-#         maxResults=2  # only retrieve the latest 5 videos
-#     )
-#     response = request.execute()
-
-#     # retrieve the latest video
-#     latest_video = response['items'][0]
-    
-#     # implement your action here
-#     print(f"New video uploaded: {latest_video['snippet']['title']}")
 
 def get_video_ids(channel_id, n):
     """

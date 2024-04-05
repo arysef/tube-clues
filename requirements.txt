@@ -6,6 +6,7 @@ python-dotenv==0.21.*
 pytest==7.2.*
 pydantic==1.10.*
 pydub==0.25.*
+pytube==15.0.*
 tenacity==8.2.*
 tiktoken==0.2.*
 numpy==1.24.*

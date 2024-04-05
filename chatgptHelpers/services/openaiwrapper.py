@@ -20,9 +20,7 @@ assert OPENAI_API_KEY is not None
 # assert OPENAI_API_TYPE is not None
 
 openai.api_key = OPENAI_API_KEY
-# openai.api_base = "https://api.openai.com/"
-# openai.api_version = OPENAI_API_VERSION
-# openai.api_type = OPENAI_API_TYPE
+
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str], model=OPENAI_EMBEDDING_ENGINE) -> List[List[float]]:
@@ -51,7 +49,7 @@ def get_embeddings(texts: List[str], model=OPENAI_EMBEDDING_ENGINE) -> List[List
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_chat_completion(
     messages,
-    model=OPENAI_CHAT_ENGINE,  # use "gpt-4" for better results
+    json=False
 ) -> str:
     """
     Generate a chat completion using OpenAI's chat completion API.
@@ -71,9 +69,10 @@ def get_chat_completion(
     print("Starting chat completion...")
     start_time = time()
     response = openai.ChatCompletion.create(
-        model=model,
+        model=OPENAI_CHAT_ENGINE,
         messages=messages,
-        response_format={ "type": "json_object" }
+        stream=False,
+        response_format= { "type": "json_object" } if json else None
     )
     end_time = time()
     print(f"Chat completion finished in {end_time-start_time:.2f} seconds.")

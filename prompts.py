@@ -3,16 +3,16 @@ from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
 import openai
 
 @cache_azure_redis
-def get_gpt_input(question: str, transcript: str) -> str:
+def get_gpt_input(question: str, transcript: str, json=True) -> str:
 
     messages = [
         {"role": "system", "content": question},
         {"role": "user", "content": transcript},
     ]
-    return get_chat_completion(messages)
+    return get_chat_completion(messages, json=json)
 
 @stream_cache_azure_redis
-def get_streaming_gpt_input(question: str, transcript: str) -> str:
+def get_streaming_gpt_input(question: str, transcript: str):
     messages = [
         {"role": "system", "content": question},
         {"role": "user", "content": transcript},
@@ -44,6 +44,24 @@ The following is an example of a correctly formatted JSON:
 [{'claim': 'Creating and completing a stand-up comedy special can be a profound personal and professional achievement, especially after overcoming significant challenges like cancer.', 'supporting_facts': [{'summary': 'The individual wrote 90 minutes of stand-up comedy about their cancer experience as a way to prove resilience and productivity through adversity.', 'sources': ['So you know, like, when you get cancer and then you have to go through cancer treatment and then you write 90 minutes of stand-up comedy about cancer and cancer treatment to prove that you can still do hard things and also that your brain still works and also because you desperately want something good to come out of the bad thing that happened to you?']}, {'summary': 'The comedian felt a need for a deadline to complete the stand-up project, and the recording day served as that deadline.', 'sources': ['First, because, like, I needed pressure to actually finish this show, like, I needed a deadline, and the day of the recording of the show was the deadline.']}], 'supporting_opinions': [{'summary': 'The personal significance of completing the stand-up project is emphasized through the urgency and commitment to finish, even under tight deadlines.', 'sources': ['But also, like, I really desperately wanted to have this project, the stand-up, be done.']}]}, {'claim': 'The nature of content creation, especially on platforms like YouTube, differs significantly from traditional media, offering a continuous, evolving body of work.', 'supporting_facts': [{'summary': 'The evolving and ongoing creation of content on YouTube contrasts with the definitive completion of projects such as books or songs.', 'sources': ["You finish a book, it's finished. You finish a song, it locks in place in people's minds, and they even hate it if you change it. You do a stand-up, you record the special, you start working on new material, or you don't. YouTube isn't like that."]}, {'summary': "The work of YouTubers like Tom Scott and Theorist exemplifies different approaches to concluding or continuing a YouTube channel's 'song'.", 'sources': ["Tom Scott's is like, the song ended, I made this big long song, here's how it's ending, and all together it is a body of work. And like, in the future, Tom Scott, I know this guy, he's not gonna stop being creative, he will make other things, whereas Theorist is another way to do this, where you just have the song keep going without you."]}], 'supporting_opinions': [{'summary': "YouTube channels represent a unique, long-term creation that differs from traditional discrete creative works, making the notion of 'retirement' from YouTube complex and nuanced.", 'sources': ["And it really does feel to me like creative works used to be discrete units. Like, YouTube video is a discrete thing, but I think the real unit of a YouTuber's body of work isn't a video, it's the channel.", "And that's weird, like, I think it's historically weird to have a unit of creation that is decades long.", "So it's a good thing that there are more people who have that freedom economically, and also have that freedom socially, from their audience, and the grace from their audience to feel as if they can do it."]}]}]
 """
     return get_gpt_input(bias_prompt, transcript)
+
+def get_title_question(title: str) -> str:
+    """
+    Takes a title and returns a question about the title.
+    """
+    title_prompt = """
+    You formulate the questions that are implicit or explicit in the titles of videos. When you receive a title, you return a question that either the title directly asks or that the title implies.
+The question that you respond with is the question that is expected to be answered by the video. Do not say anything more or less than the question. 
+The following are examples:
+Title: "The Future of Work" -> Question: What is the future of work?
+Title: "The Impact of Climate Change on the Economy" -> Question: How does climate change impact the economy?
+Title: "The Honda S2000 Is Still a Fantastic Old-School Sports Car" -> Question: Why is the Honda S2000 still a fantastic old-school sports car?
+Title: "FAT* 2019 Implications Tutorial: Parole Denied: One Man's Fight Against a COMPAS Risk Assessment" -> Question: What is the man's fight against a COMPAS Risk Assessment?
+Title: "Why the era of cheap streaming is over" -> Question: Why is the era of cheap streaming over?
+Title: "Lightning Talk: Implementing Coroutines Using C++17 - Alon Wolf - CppCon 2023" -> Question: How do you implement coroutines using C++17?
+"""
+    response = get_gpt_input(title_prompt, title, json=False)
+    return response
 
 def get_custom_flow(prompt: str, transcript: str) -> str:
     """

@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Jeremy")
+""".format("King Kunta")
 
 # Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
@@ -75,33 +75,21 @@ def parse_json_data(json_data: str):
         print(json_data)
         return None, str(e)
 
-def summarization_flow(transcript: str):
-    with st.spinner("Searching video for statements..."):
-        start_time = time.time()
-        raw_summarization = get_summarization_input(transcript)
-        gpt_feedback, error = parse_json_data(raw_summarization)
-        if error:
-            return time.time() - start_time
+def title_flow(transcript: str, video_url: str):
+    start_time = time.time()
+    title = get_video_title(video_url)
+    st.markdown(f"**Title:** {title}")
+    question = get_title_question(title)
 
-        claims = gpt_feedback['overarching_claims']
-        with st.container():
-            st.header("Summarization: ")
-            for claim in claims:
-                with st.expander(claim["claim"], expanded=False):
-                    st.write("Facts Claimed in Video: ")
-                    for fact in claim["supporting_facts"]:
-                        st.write(f"- {fact['summary']}")
-                        for source in fact["sources"]:
-                            st.write(f"    - \"{source}\"")
-                    st.write("Opinions Expressed in Video: ")
-                    for opinion in claim["supporting_opinions"]:
-                        st.write(f"- {opinion['summary']}")
-                        for source in opinion["sources"]:
-                            st.write(f"    - \"{source}\"")
+    with st.spinner("Processing request..."):
+        st.markdown(f"**Question Asked:** {question}")
+        stream_text = st.markdown("")
+        for completion_text in get_custom_flow(question, transcript):
+            stream_text.markdown(completion_text)
+            time.sleep(0.05)
 
+    return time.time() - start_time
 
-        elapsed_time = time.time() - start_time
-    return elapsed_time
 
 def fact_finding_flow(transcript: str):
     with st.container():
@@ -200,7 +188,7 @@ def main():
     st.markdown("""<style>.reportview-container .markdown-text { text-align: center; }</style>""", unsafe_allow_html=True)
     video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
 
-    summarization = False
+    clickbait = False
     custom = False
     bias = False
     button_clicked = False
@@ -210,7 +198,7 @@ def main():
     st.write("Click button for chosen flow: ")
     col1, col2, col3  = st.columns([1, 1, 1], gap="small")
     with col1: 
-        summarization = st.button("Summarization", use_container_width=True)
+        clickbait = st.button("Clickbait", use_container_width=True)
     
     with col2:
         custom = st.button("Custom Prompt", use_container_width=True)
@@ -226,7 +214,7 @@ def main():
     if custom or (prev_qry != custom_prompt):
         prev_qry = custom_prompt
         custom = True
-    button_clicked = summarization | custom | bias
+    button_clicked = clickbait | custom | bias
 
     # This part is required regardless of chosen flow.
     # Nothing has happened yet, no error message needed
@@ -278,12 +266,12 @@ def main():
         # print(transcript)
         st.write(escape_markdown(transcript))
 
-    # Summarization flow
+    # Clickbait flow
     flow_elapsed_time = 0
-    if summarization:
-        flow_elapsed_time = summarization_flow(transcript)
+    if clickbait:
+        flow_elapsed_time = title_flow(transcript, video_url)
     
-    if custom and not summarization and not bias:
+    if custom and not clickbait and not bias:
         flow_elapsed_time = 0 # TODO: Add custom prompt flow
         if prev_qry and len(prev_qry) > 0 and len(prev_qry) < 250:
             flow_elapsed_time = custom_flow(transcript, prev_qry)
