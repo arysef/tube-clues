@@ -1,3 +1,4 @@
+from typing import Generator
 from chatgptHelpers.services.openaiwrapper import get_chat_completion, streaming_get_chat_completion
 from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
 import openai
@@ -63,7 +64,7 @@ Title: "Lightning Talk: Implementing Coroutines Using C++17 - Alon Wolf - CppCon
     response = get_gpt_input(title_prompt, title, json=False)
     return response
 
-def get_custom_flow(prompt: str, transcript: str) -> str:
+def get_custom_flow(prompt: str, transcript: str) -> Generator[str, None, None]:
     """
     Takes a transcript and a question or prompt and attempts to respond or answer.
     """

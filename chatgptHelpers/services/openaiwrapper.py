@@ -1,24 +1,16 @@
-from typing import List
+from typing import Generator, List
 import openai
 import os
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from time import time
 OPENAI_EMBEDDING_ENGINE = os.environ.get("OPENAI_EMBEDDING_ENGINE")
-OPENAI_CHAT_ENGINE = "gpt-4-0125-preview"
-# OPENAI_CHAT_ENGINE = "gpt-4"
-# OPENAI_API_BASE = os.environ.get("OPENAI_RESOURCE_ENDPOINT")
+OPENAI_CHAT_ENGINE = "gpt-4o"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-# OPENAI_API_VERSION = os.environ.get("OPENAI_API_VERSION")
-# OPENAI_API_TYPE = os.environ.get("OPENAI_API_TYPE")
 
 assert OPENAI_EMBEDDING_ENGINE is not None
 assert OPENAI_CHAT_ENGINE is not None
-# assert OPENAI_API_BASE is not None
 assert OPENAI_API_KEY is not None
-# assert OPENAI_API_VERSION is not None
-# assert OPENAI_API_TYPE is not None
-
 openai.api_key = OPENAI_API_KEY
 
 
@@ -79,10 +71,9 @@ def get_chat_completion(
 
     choices = response["choices"]  # type: ignore
     completion = choices[0].message.content.strip()
-    # print(f"Completion: {completion}")
     return completion.replace("$", "\\\\$")
 
-def streaming_get_chat_completion(messages: str) -> str:
+def streaming_get_chat_completion(messages: str) -> Generator[str, None, None]:
     response = openai.ChatCompletion.create(
         model=OPENAI_CHAT_ENGINE,
         messages=messages,
