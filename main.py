@@ -1,6 +1,4 @@
 # Mostly just for trying out things and impromptu testing. Real main is in streamlit.py
-from chatgptHelpers.services.openaiwrapper import get_chat_completion
-
 import helpers
 import json
 import redis_wrapper

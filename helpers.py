@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import datetime
 from googleapiclient.discovery import build
 from pytube import YouTube
+import logging
 import os
 import re
 import requests
@@ -73,7 +74,12 @@ def extract_video_id(youtube_link):
         return None
     
 def get_video_title(url: str) -> str:
-    return YouTube(url).title
+    try:
+        yt = YouTube(url)
+        return yt.title
+    except Exception as e:
+        logging.error(f"Failed to get video title for URL: {url} - Error: {str(e)}")
+        raise Exception(f"Error retrieving video title: {str(e)}") from e
 
     
 def convert_date(date_str):

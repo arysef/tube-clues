@@ -59,7 +59,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("L-O-V-E")
+""".format("Mr. Morale")
 
 # Helper function to parse JSON data from model and turn it into error message if needed
 def parse_json_data(json_data: str):
@@ -254,6 +254,9 @@ def main():
     
     if not transcript:
         transcript = transcript_creation_flow(video_id)
+    if not transcript: 
+        st.error("Transcript creation failed. :(")
+        return
     transcript_elapsed_time = time.time() - start_time
     st.sidebar.info("Transcript retrieved in {:.2f} seconds.".format(transcript_elapsed_time))
 

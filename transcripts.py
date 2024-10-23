@@ -1,4 +1,4 @@
-from ast import Tuple
+import logging
 import math
 import os
 import time
@@ -6,13 +6,53 @@ from typing import Optional, List
 import concurrent.futures as concurrency
 import concurrent.futures as futures
 from youtube_transcript_api import YouTubeTranscriptApi
-from chatgptHelpers.services.openaiwrapper import get_whisper_transcript
-
-from helpers import *
 from redis_wrapper import cache_azure_redis
 from pydub import AudioSegment
+import openai
+
+from helpers import *
+
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+assert OPENAI_API_KEY is not None
+openai.api_key = OPENAI_API_KEY
 
 from video_processing import *
+
+logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+client = openai.OpenAI()
+def get_whisper_transcript(file_path, model="whisper-1"):
+    """
+    Generate a transcript using OpenAI's Whisper transcript API.
+
+    Args: 
+        file_path: The file path of the mp3 being passed in.
+        model: The model to use. As of this comment, only whisper-1 is available on OpenAI endpoint.
+
+    Raises: 
+        Exception if OpenAI API call fails.
+    """
+    try:
+        with open(file_path, "rb") as audio_file:
+            print("Starting transcription...")
+            start_time = time.time()
+
+            # Make the API call
+            transcript = client.audio.transcriptions.create(model=model, file=audio_file)
+            
+            end_time = time.time()
+            print(f"Transcription completed in {end_time-start_time:.2f} seconds.")
+            
+            return transcript.text
+
+    except FileNotFoundError as e:
+        logging.error(f"File not found: {file_path}")
+        raise Exception(f"File not found: {file_path}") from e
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {str(e)}")
+        raise Exception(f"An unexpected error occurred: {str(e)}") from e
+
 
 def split_transcript(id: str, format="mp3") -> List[str]:
     """
@@ -22,7 +62,7 @@ def split_transcript(id: str, format="mp3") -> List[str]:
         audio_location = to_audio_location(id)
         audio = AudioSegment.from_mp3(audio_location)
 
-        chunk_duration_ms = 2e5 # A little over 3 minutes
+        chunk_duration_ms = 1e6 # A little over 3 minutes
         print(chunk_duration_ms)
         num_chunks = math.ceil(len(audio) / chunk_duration_ms)
         print(num_chunks)
