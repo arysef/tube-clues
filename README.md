@@ -1,5 +1,5 @@
 # Overview 
-The purpose of this repository is a pipeline for YouTube video analysis and specifically fact-check. Videos can have transcripts retrieved or generated using Whisper with a flag. There are also prompts in progress for analysis of the videos. Currently the only prompt is for unverifiable or potentially misleading facts. Eventually the goal is to have a fact check pipeline and other pipelines for analyzing other elements of transcripts. 
+The original purpose of this repository was a system to fact check or provide context to news videos. However, it has since evolved to a simple way to gather necessary information without having to watch a video. Great for when you're curious about a click-baity title but don't want to get sucked in. 
 
 # Open Issues
 - Develop some sort of opinionation/bias measure and way to display it
