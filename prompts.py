@@ -1,11 +1,11 @@
-from typing import Generator
-from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
-
 import os
+from typing import Generator
+
 import langchain
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
 
 OPENAI_CHAT_ENGINE = "gpt-4o"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")

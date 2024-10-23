@@ -1,12 +1,12 @@
 from ast import Tuple
+import json
+import streamlit as st
+import time 
+
 from helpers import *
 from prompts import *
 from transcripts import *
 from video_processing import *
-
-import json
-import streamlit as st
-import time 
 
 # Set page configuration and footer
 st.set_page_config(page_title="Tube Clues", page_icon="data/magnifying-glass.png")

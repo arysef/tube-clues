@@ -5,22 +5,21 @@ import time
 from typing import Optional, List
 import concurrent.futures as concurrency
 import concurrent.futures as futures
+
 from youtube_transcript_api import YouTubeTranscriptApi
-from redis_wrapper import cache_azure_redis
 from pydub import AudioSegment
 import openai
 
 from helpers import *
-
+from redis_wrapper import cache_azure_redis
+from video_processing import *
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 assert OPENAI_API_KEY is not None
 openai.api_key = OPENAI_API_KEY
-
-from video_processing import *
-
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 client = openai.OpenAI()
+
 def get_whisper_transcript(file_path, model="whisper-1"):
     """
     Generate a transcript using OpenAI's Whisper transcript API.
