@@ -56,7 +56,11 @@ def extract_video_id(youtube_link):
     try:
         # Enhanced regular expression to match various YouTube URL formats including URLs with additional query parameters
         pattern = re.compile(
-            r'(?:https?://)?(?:www\.|m\.)?youtube\.com/watch.*?v=([\w-]+)|youtu\.be/([\w-]+)'
+            r'(?:https?://)?'                         # Optional protocol
+            r'(?:www\.|m\.)?'                         # Optional www. or m.
+            r'(?:youtube\.com/(?:(?:watch.*?v=)|shorts/)|youtu\.be/)'  # watch or shorts or youtu.be
+            r'([\w-]+)',                              # The capturing group for VIDEO_ID
+            re.IGNORECASE
         )
         match = pattern.search(youtube_link)
         
