@@ -133,3 +133,4 @@ cached_transcripts/
 cached_audio/
 .vscode
 **/.DS_Store
+Dockerfile

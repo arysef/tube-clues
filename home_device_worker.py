@@ -5,6 +5,7 @@ import logging
 import concurrent.futures as futures
 from typing import Optional, List
 from string import printable
+from functools import wraps
 
 from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -82,6 +83,17 @@ def create_whisper_transcript(video_id: str, model: str = "whisper-large-v3") ->
         if os.path.exists(file_path):
             os.remove(file_path)
 
+def cleanup_transcript_status(func):
+    @wraps(func)
+    def wrapper(video_id: str, task_type: str, *args, **kwargs):
+        status_key = f"transcript_status:{task_type}:{video_id}"
+        try:
+            return func(video_id, task_type, *args, **kwargs)
+        finally:
+            value_cache.delete(status_key)
+    return wrapper
+
+@cleanup_transcript_status
 def process_job(video_id: str, task_type: str):
     """
     Executes the correct transcription method based on task_type.
@@ -128,13 +140,9 @@ def process_job(video_id: str, task_type: str):
         # Store in Redis under transcript:<final_method_used>:<video_id>
         transcript_key = f"transcript:{final_method_used}:{video_id}"
         value_cache.set(transcript_key, transcript, ex=60 * 60 * 24)  # e.g. 24-hour expiration
-
-        # Mark the original request status as done
-        value_cache.set(status_key_original, "done")
         logging.info(f"[Worker] Successfully stored {final_method_used} transcript for video_id={video_id}")
     else:
         # Could be an error or no subtitles in both fallback attempts
-        value_cache.set(status_key_original, "failed")
         logging.warning(f"[Worker] Both fallback methods failed for video_id={video_id}")
 
 def main_loop():

@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 QUEUE_NAME = "transcript_queue"
 POLL_INTERVAL = 0.5         # seconds between polls
 MAX_POLL_TIME = 60.0        # max seconds to wait for the transcript
+MAX_JOBS_IN_FLIGHT = 5      # max queued or in_progress jobs allowed
 
 def get_transcript(video_id: str, task_type: str):
     """
@@ -38,9 +39,13 @@ def get_transcript(video_id: str, task_type: str):
         logging.info(f"[User] Found existing youtube transcript in cache for video ID: {video_id}.")
         return youtube_data
 
+    jobs_in_queue = r.llen(QUEUE_NAME)
+    if jobs_in_queue >= MAX_JOBS_IN_FLIGHT:
+        logging.error(f"[User] Too many jobs in the queue ({jobs_in_queue}). Rejecting new job.")
+        raise RuntimeError("Transcript queue is full. Please try again later.")
+
     # --- 3) If no transcript, see if job is already queued or in progress for the requested task_type ---
     status_key = f"transcript_status:{task_type}:{video_id}"
-    transcript_key = f"transcript:{task_type}:{video_id}"
 
     status_val = r.get(status_key)
     if not status_val:
