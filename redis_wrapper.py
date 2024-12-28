@@ -13,6 +13,7 @@ AZURE_REDIS_HOST = os.environ.get("AZURE_REDIS_HOST")
 AZURE_REDIS_KEY = os.environ.get("AZURE_REDIS_KEY")
 DEFAULT_EXPIRATION = datetime.timedelta(days=30)
 DEFAULT_LOCK_TIMEOUT = 120
+QUEUE_NAME = "transcript_queue"
 
 value_cache = redis.StrictRedis(
     host=AZURE_REDIS_HOST, 

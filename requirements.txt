@@ -26,3 +26,4 @@ yt-dlp==2024.8.6
 streamlit==1.39.*
 langchain==0.3.*
 langchain-openai==0.2.*
+groq==0.13.*

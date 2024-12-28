@@ -6,7 +6,7 @@ import streamlit as st
 
 from helpers import escape_markdown
 from prompts import get_title_question, get_custom_flow, get_fact_finding_input, get_bias_flow
-from transcripts import create_whisper_transcript, get_youtube_str_transcript
+from transcripts import get_transcript
 from video_processing import extract_video_id, get_video_title, get_video_duration
 
 # Configure logging for debugging or info as needed
@@ -180,7 +180,7 @@ def transcript_creation_flow(video_id: str) -> str:
     """
     with st.spinner("Creating transcript for video..."):
         try:
-            transcript = create_whisper_transcript(video_id)
+            transcript = get_transcript(video_id, "audio")
             if not transcript:
                 st.error("Could not create transcript for video.")
                 return ""
@@ -260,7 +260,7 @@ def main():
 
     if allow_youtube_captions:
         with st.spinner("Retrieving transcript for video from YouTube..."):
-            transcript = get_youtube_str_transcript(video_id)
+            transcript = get_transcript(video_id, "youtube")
             if transcript:
                 retrieved_transcript_from_captions = True
     

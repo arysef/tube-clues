@@ -1,10 +1,11 @@
+import datetime
 import logging
 import os
 import re
 import requests
 
+import openai
 from bs4 import BeautifulSoup
-import datetime
 from googleapiclient.discovery import build
 from pytube import YouTube
 
@@ -15,6 +16,11 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 assert YOUTUBE_API_KEY is not None
 
 youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY, cache_discovery=False)
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+assert OPENAI_API_KEY is not None, "OPENAI_API_KEY environment variable is not set."
+openai.api_key = OPENAI_API_KEY
+openai_client = openai.OpenAI()
 
 def get_channel_id_locally(url):
     """
