@@ -65,7 +65,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Ocean Man")
+""".format("Pink Pony Club")
 
 def parse_json_data(json_data: str):
     """
