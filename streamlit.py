@@ -86,14 +86,14 @@ def parse_json_data(json_data: str):
         logging.error(f"JSON parsing failed: {str(e)}")
         return None, str(e)
 
-def title_flow(transcript: str, video_url: str) -> float:
+def title_flow(transcript: str, video_id: str) -> float:
     """
     Display the video title and simulate a 'clickbait' check or discussion.
     
     Returns the elapsed time (in seconds) for this flow.
     """
     start_time = time.time()
-    title = get_video_title(video_url)
+    title = get_video_title(video_id)
     st.markdown(f"**Title:** {title}")
     question = get_title_question(title)
 
@@ -290,7 +290,7 @@ def main():
     flow_elapsed_time = 0.0
 
     if clickbait:
-        flow_elapsed_time = title_flow(transcript, video_url)
+        flow_elapsed_time = title_flow(transcript, video_id)
 
     elif custom:
         # Custom flow with user prompt

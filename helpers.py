@@ -7,7 +7,6 @@ import requests
 import openai
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
-from pytube import YouTube
 
 cached_transcripts_folder = "cached_transcripts"
 cached_audio_folder = "cached_audio"
@@ -84,14 +83,34 @@ def extract_video_id(youtube_link):
         print(f"Error: {e}")
         return None
     
-def get_video_title(url: str) -> str:
-    try:
-        yt = YouTube(url)
-        return yt.title
+def get_video_title(video_id):
+    try:      
+        # Make a request to the API
+        request = youtube.videos().list(
+            part='snippet',
+            id=video_id
+        )
+        response = request.execute()
+        
+        # Log detailed issues if something goes wrong
+        if 'items' not in response:
+            print("Error: 'items' field is missing from the API response.")
+            return None
+        elif len(response['items']) == 0:
+            print("Error: No video found for the provided video ID. The 'items' list is empty.")
+            return None
+        
+        # Extract and return the video title
+        video_title = response['items'][0]['snippet'].get('title')
+        if video_title is None:
+            print("Error: 'title' field is missing in the 'snippet' of the video data.")
+            return None
+        
+        return video_title
+    
     except Exception as e:
-        logging.error(f"Failed to get video title for URL: {url} - Error: {str(e)}")
-        raise Exception(f"Error retrieving video title: {str(e)}") from e
-
+        print(f"An unexpected error occurred: {e}")
+        return None
     
 def convert_date(date_str):
     """

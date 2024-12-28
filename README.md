@@ -2,8 +2,6 @@
 The original purpose of this repository was a system to fact check or provide context to news videos. However, it has since evolved to a simple way to gather necessary information without having to watch a video. Great for when you're curious about a click-baity title but don't want to get sucked in. 
 
 # Open Issues
-- Fix video title not downloading
-- 
 - Develop some sort of opinionation/bias measure and way to display it
 - Add diarization -> sometimes the videos play clips within them and that makes the transcript nonsensical without diarization
     - Even with diarization, sometimes speakers themselves read a section of text they are quoting: it'd be nice to capture that they're quoting someone else in those scenarios
