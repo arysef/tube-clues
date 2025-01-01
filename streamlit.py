@@ -4,7 +4,8 @@ import datetime
 import logging
 import streamlit as st
 
-from helpers import escape_markdown
+from redis_wrapper import worker_alive
+from helpers import escape_all_markdown, escape_unexpected_markdown
 from prompts import get_title_question, get_custom_flow, get_fact_finding_input, get_bias_flow
 from transcripts import get_transcript
 from video_processing import extract_video_id, get_video_title, get_video_duration
@@ -101,7 +102,7 @@ def title_flow(transcript: str, video_id: str) -> float:
         st.markdown(f"**Question Asked:** {question}")
         stream_text = st.markdown("")
         for completion_text in get_custom_flow(question, transcript):
-            stream_text.markdown(completion_text)
+            stream_text.markdown(escape_unexpected_markdown(completion_text))
             time.sleep(0.05)
 
     return time.time() - start_time
@@ -170,7 +171,7 @@ def custom_flow(prompt: str, transcript: str) -> float:
     with st.spinner("Processing request..."):
         stream_text = st.markdown("")
         for completion_text in get_custom_flow(prompt, transcript):
-            stream_text.markdown(completion_text)
+            stream_text.markdown(escape_unexpected_markdown(completion_text))
             time.sleep(0.05)
     return time.time() - start_time
 
@@ -192,13 +193,23 @@ def transcript_creation_flow(video_id: str) -> str:
 
 def main():
     logging.info("Starting Tube Clues...")
+    if not worker_alive():
+        st.warning("Worker is out for lunch, only previously cached transcripts will work")
+        _, cent_co, _ = st.columns(3)
+        with cent_co:
+            st.image("data/amigo.png", use_column_width=True)
+        
+
     st.title("Tube Clues")
     st.markdown(
         """<style>.reportview-container .markdown-text { text-align: center; }</style>""",
         unsafe_allow_html=True
     )
 
-    video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
+    url = st.query_params['url'] if 'url' in st.query_params else ""
+    video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url", value = url)
+    if video_url:
+        st.query_params['url'] = video_url
 
     # Flow triggers
     clickbait = False
@@ -284,7 +295,7 @@ def main():
 
     with st.expander(transcript_title, expanded=False):
         # print(transcript)
-        st.write(escape_markdown(transcript))
+        st.write(escape_all_markdown(transcript))
 
     # Execute chosen flow(s)
     flow_elapsed_time = 0.0

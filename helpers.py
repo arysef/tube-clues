@@ -122,9 +122,18 @@ def convert_date(date_str):
     date_obj = datetime.datetime.strptime(date_str, "%m/%d/%Y")
     return date_obj.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def escape_markdown(text: str) -> str:
+# This is used for transcript text, where no markdown formatting is expected
+def escape_all_markdown(text: str) -> str:
     # Escape special Markdown characters
     markdown_chars = ['*', '_', '`', '[', ']', '(', ')', '#', '+', '-', '!', '|', '$']
+    for char in markdown_chars:
+        text = text.replace(char, '\\' + char)
+    return text
+
+# This is used for AI generated text, where sometimes things like bullet points are used but $ for italics is not
+def escape_unexpected_markdown(text: str) -> str:
+    # Escape special Markdown characters
+    markdown_chars = ['_', '`', '[', ']', '(', ')', '#', '+', '!', '|', '$']
     for char in markdown_chars:
         text = text.replace(char, '\\' + char)
     return text

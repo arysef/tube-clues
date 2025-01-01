@@ -14,6 +14,7 @@ AZURE_REDIS_KEY = os.environ.get("AZURE_REDIS_KEY")
 DEFAULT_EXPIRATION = datetime.timedelta(days=30)
 DEFAULT_LOCK_TIMEOUT = 120
 QUEUE_NAME = "transcript_queue"
+WORKER_HEARTBEAT = "worker:heartbeat"
 
 value_cache = redis.StrictRedis(
     host=AZURE_REDIS_HOST, 
@@ -130,3 +131,10 @@ def stream_cache_azure_redis(func):
                 lock.release()
 
     return wrapper
+
+
+def worker_alive() -> bool: 
+    """
+    Checks if the worker is alive by setting a key in Redis.
+    """
+    return value_cache.get(WORKER_HEARTBEAT) is not None

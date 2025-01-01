@@ -2,15 +2,15 @@ import os
 import time
 import json
 import logging
-import concurrent.futures as futures
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional
 from string import printable
 from functools import wraps
 
 from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from redis_wrapper import value_cache, QUEUE_NAME
+from redis_wrapper import value_cache, QUEUE_NAME, WORKER_HEARTBEAT
 from helpers import to_audio_location
 from video_processing import download_video_mp3
 
@@ -147,9 +147,13 @@ def process_job(video_id: str, task_type: str):
 
 def main_loop():
     logging.info("Worker started. Listening for tasks...")
+    SLEEP_TIME = 5 * 60  # 10 minutes
     while True:
+        value_cache.setex(WORKER_HEARTBEAT, SLEEP_TIME, "alive")
+
         # BLPOP blocks until there's a job
-        result = value_cache.blpop([QUEUE_NAME], timeout=0)
+        logging.info(f"Reconnecting to queue at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        result = value_cache.blpop([QUEUE_NAME], timeout=SLEEP_TIME)
         if not result:
             continue
 
@@ -159,7 +163,9 @@ def main_loop():
             video_id = job_data["video_id"]
             task_type = job_data["task_type"]
             logging.info(f"Picked up job: {video_id}, task_type={task_type}")
+            start_time = time.time()
             process_job(video_id, task_type)
+            logging.info(f"Job completed in {time.time() - start_time:.2f} seconds.")
         except Exception as e:
             logging.exception(f"Error decoding job data: {raw_data}, {e}")
 
@@ -168,8 +174,8 @@ def run_worker():
         try:
             main_loop()
         except Exception as e:
-            logging.exception(f"Worker loop crashed. Restarting in 5sec... {e}")
-            time.sleep(5)
+            logging.exception(f"Worker loop crashed. Restarting in 1sec... {e}")
+            time.sleep(1)
 
 if __name__ == "__main__":
     run_worker()
