@@ -197,8 +197,7 @@ def main():
         st.warning("Worker is out for lunch, only previously cached transcripts will work")
         _, cent_co, _ = st.columns(3)
         with cent_co:
-            st.image("data/amigo.png", use_column_width=True)
-        
+            st.image("data/amigo.png", use_column_width=True) 
 
     st.title("Tube Clues")
     st.markdown(
@@ -206,10 +205,7 @@ def main():
         unsafe_allow_html=True
     )
 
-    url = st.query_params['url'] if 'url' in st.query_params else ""
-    video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url", value = url)
-    if video_url:
-        st.query_params['url'] = video_url
+    video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
 
     # Flow triggers
     clickbait = False
@@ -302,6 +298,9 @@ def main():
 
     if clickbait:
         flow_elapsed_time = title_flow(transcript, video_id)
+    
+    elif bias:
+        flow_elapsed_time = bias_flow(transcript)
 
     elif custom:
         # Custom flow with user prompt
@@ -309,9 +308,6 @@ def main():
             flow_elapsed_time = custom_flow(custom_prompt, transcript)
         else:
             st.error("Custom prompt must be between 1 and 250 characters.")
-
-    elif bias:
-        flow_elapsed_time = bias_flow(transcript)
 
     st.sidebar.info(f"Answer crafted in {flow_elapsed_time:.2f} seconds.")
     total_time = flow_elapsed_time + transcript_elapsed_time
