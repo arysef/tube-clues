@@ -191,13 +191,78 @@ def transcript_creation_flow(video_id: str) -> str:
             return ""
     return transcript
 
+
+def init_query_params():
+    """Initialize st.session_state from st.query_params."""
+    q = st.query_params
+    
+    # Instead of storing full URL, store only the video ID in query param "vid"
+    stored_video_id = q.get("vid", "")
+    reconstructed_url = f"https://www.youtube.com/watch?v={stored_video_id}" if stored_video_id else ""
+
+    # Use .setdefault() for session state
+    st.session_state.setdefault("video_url", reconstructed_url)
+    st.session_state.setdefault("allow_youtube_captions", q.get("captions", "true").lower() == "true")
+    st.session_state.setdefault("flow_param", q.get("flow", ""))
+    st.session_state.setdefault("custom_prompt", q.get("prompt", ""))
+    # Keep an "old_video_url" for flow resets
+    st.session_state.setdefault("old_video_url", st.session_state["video_url"])
+
+
+def sync_query_params():
+    """Synchronize st.session_state back to st.query_params."""
+    q = st.query_params
+
+    # Extract video ID from the current video_url and store it in "vid"
+    video_url = st.session_state["video_url"].strip()
+    video_id = extract_video_id(video_url)
+
+    if video_id:
+        q["vid"] = video_id
+    else:
+        q.pop("vid", None)
+
+    # Keep the rest of your settings in the query params
+    if st.session_state["allow_youtube_captions"]:
+        q.pop("captions", None)
+    else:
+        q["captions"] = "false"
+
+    flow_param = st.session_state["flow_param"].strip()
+    if flow_param:
+        q["flow"] = flow_param
+    else:
+        q.pop("flow", None)
+
+    custom_prompt = st.session_state["custom_prompt"].strip()
+    if flow_param == "custom" and custom_prompt:
+        q["prompt"] = custom_prompt
+    else:
+        q.pop("prompt", None)
+
+
+def reset_flow_if_new_url():
+    """
+    Callback invoked whenever the video_url text input changes.
+    If the user typed a different URL than 'old_video_url',
+    reset flow_param (and optionally custom_prompt).
+    """
+    old_url = st.session_state.get("old_video_url", "")
+    new_url = st.session_state["video_url"].strip()
+    if new_url != old_url:
+        st.session_state["flow_param"] = ""
+        st.session_state["old_video_url"] = new_url
+
+
 def main():
     logging.info("Starting Tube Clues...")
+    init_query_params()
+
     if not worker_alive():
         st.warning("Worker is out for lunch, only previously cached transcripts will work")
         _, cent_co, _ = st.columns(3)
         with cent_co:
-            st.image("data/amigo.png", use_column_width=True) 
+            st.image("data/amigo.png", use_column_width=True)
 
     st.title("Tube Clues")
     st.markdown(
@@ -205,78 +270,100 @@ def main():
         unsafe_allow_html=True
     )
 
-    video_url = st.text_input("Enter video URL: ", placeholder="", key="video_url")
+    # Video URL input: attach on_change callback
+    st.text_input(
+        "Enter video URL: ",
+        placeholder="",
+        key="video_url",
+        on_change=reset_flow_if_new_url
+    )
 
-    # Flow triggers
-    clickbait = False
-    custom = False
-    bias = False
-    button_clicked = False
-    
-    allow_youtube_captions = st.checkbox(
+    st.checkbox(
         "Prefer YouTube Caption Usage",
-        value=True,
-        help="Using existing captions from YouTube can be faster if a manually generated transcript is available and a generated one is not cached in TubeClues."
+        help=(
+            "Using existing captions from YouTube can be faster if a manually generated "
+            "transcript is available and a generated one is not cached in TubeClues."
+        ),
+        key="allow_youtube_captions"
     )
 
     st.write("Click button for chosen flow: ")
     col1, col2, col3 = st.columns([1, 1, 1], gap="small")
-    with col1: 
-        clickbait = st.button("Clickbait", use_container_width=True)
+    with col1:
+        clickbait_button = st.button("Clickbait", use_container_width=True)
     with col2:
-        custom = st.button("Custom Prompt", use_container_width=True)
+        custom_button = st.button("Custom Prompt", use_container_width=True)
     with col3:
-        bias = st.button("Bias", use_container_width=True)
+        bias_button = st.button("Bias", use_container_width=True)
 
-    custom_prompt = st.text_input("Enter custom prompt: ", placeholder="What's the recipe?", key="custom_prompt")
-    custom |= custom_prompt.strip() != ""
-    logging.info(f"Custom status: {custom}")
+    # If a button is pressed, set the flow
+    if clickbait_button:
+        st.session_state["flow_param"] = "clickbait"
+    elif custom_button:
+        st.session_state["flow_param"] = "custom"
+    elif bias_button:
+        st.session_state["flow_param"] = "bias"
 
-    # If "Custom Prompt" button is pressed or if text in the custom prompt changes
-    button_clicked = clickbait or custom or bias
+    st.text_input(
+        "Enter custom prompt: ",
+        placeholder="What's the recipe?",
+        key="custom_prompt"
+    )
 
-    # Early return if no input was given and no button was pressed
-    if (video_url.strip() == "" and not button_clicked):
+    # If user typed a prompt, auto-switch to custom flow unless we just clicked another button
+    if st.session_state["custom_prompt"].strip() and not (clickbait_button or bias_button):
+        st.session_state["flow_param"] = "custom"
+
+    # Determine which flow is active
+    flow_param = st.session_state["flow_param"]
+    clickbait = (flow_param == "clickbait")
+    bias = (flow_param == "bias")
+    custom = (flow_param == "custom")
+    button_clicked = (clickbait or bias or custom)
+
+    video_url = st.session_state["video_url"].strip()
+    if not video_url and not button_clicked:
+        sync_query_params()
         return
-    
-    # Check custom prompt validity
-    if custom and (not custom_prompt or len(custom_prompt.strip()) == 0):
+
+    if custom and not st.session_state["custom_prompt"].strip():
         st.error("A prompt is required for the question answering flow.")
+        sync_query_params()
         return
 
-    # Validate the video URL
+    # Validate URL
     video_id = extract_video_id(video_url)
     if not video_id:
         st.error("Invalid video URL.")
+        sync_query_params()
         return
 
-    # Validate video length
-
+    # Validate length
     duration = get_video_duration(video_id)
     max_duration = datetime.timedelta(minutes=60)
     if duration > max_duration:
         st.error(f"Video duration of {duration} is too long. Maximum supported duration is {max_duration}.")
+        sync_query_params()
         return
     if duration > datetime.timedelta(minutes=10):
         st.warning("Video duration is over 10 minutes, processing time may be extended.")
-    
+
     # Retrieve transcript
-    transcript = None
     start_time = time.time()
+    transcript = None
     retrieved_transcript_from_captions = False
 
-    if allow_youtube_captions:
+    if st.session_state["allow_youtube_captions"]:
         with st.spinner("Retrieving transcript for video from YouTube..."):
             transcript = get_transcript(video_id, "youtube")
             if transcript:
                 retrieved_transcript_from_captions = True
-    
+
     if not transcript:
         transcript = transcript_creation_flow(video_id)
-    
     if not transcript:
-        # If still no transcript, abort.
         st.error("Transcript creation failed.")
+        sync_query_params()
         return
 
     transcript_elapsed_time = time.time() - start_time
@@ -288,24 +375,19 @@ def main():
         if retrieved_transcript_from_captions
         else "Video Transcript (Generated from Video Audio)"
     )
-
     with st.expander(transcript_title, expanded=False):
-        # print(transcript)
         st.write(escape_all_markdown(transcript))
 
-    # Execute chosen flow(s)
+    # Execute the chosen flow
     flow_elapsed_time = 0.0
-
     if clickbait:
         flow_elapsed_time = title_flow(transcript, video_id)
-    
     elif bias:
         flow_elapsed_time = bias_flow(transcript)
-
     elif custom:
-        # Custom flow with user prompt
-        if 1 <= len(custom_prompt) <= 250:
-            flow_elapsed_time = custom_flow(custom_prompt, transcript)
+        prompt_text = st.session_state["custom_prompt"].strip()
+        if 1 <= len(prompt_text) <= 250:
+            flow_elapsed_time = custom_flow(prompt_text, transcript)
         else:
             st.error("Custom prompt must be between 1 and 250 characters.")
 
@@ -315,6 +397,9 @@ def main():
 
     if not button_clicked:
         st.info("For additional processing, please select an option above.")
+
+    # Sync final state
+    sync_query_params()
 
 if __name__ == '__main__':
     main()
