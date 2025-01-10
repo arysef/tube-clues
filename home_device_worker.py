@@ -139,7 +139,7 @@ def process_job(video_id: str, task_type: str):
     if transcript and final_method_used:
         # Store in Redis under transcript:<final_method_used>:<video_id>
         transcript_key = f"transcript:{final_method_used}:{video_id}"
-        value_cache.set(transcript_key, transcript, ex=60 * 60 * 24)  # e.g. 24-hour expiration
+        value_cache.set(transcript_key, transcript, ex=60 * 60 * 24 * 7)  # 1 week expiration
         logging.info(f"[Worker] Successfully stored {final_method_used} transcript for video_id={video_id}")
     else:
         # Could be an error or no subtitles in both fallback attempts

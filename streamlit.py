@@ -66,7 +66,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("Pink Pony Club")
+""".format("reincarnated")
 
 def parse_json_data(json_data: str):
     """
