@@ -1,21 +1,21 @@
+# home_device_worker.py
+
 import os
 import time
 import json
 import logging
 from datetime import datetime
-from typing import Optional
 from string import printable
-from functools import wraps
+from typing import Optional
 
-from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
+from groq import Groq
 
 from redis_wrapper import value_cache, QUEUE_NAME, WORKER_HEARTBEAT
 from helpers import to_audio_location
 from video_processing import download_video_mp3
 
 logging.basicConfig(level=logging.INFO)
-
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 assert GROQ_API_KEY is not None, "GROQ_API_KEY environment variable is not set."
 groq_client = Groq(api_key=GROQ_API_KEY)
@@ -33,11 +33,10 @@ def get_youtube_str_transcript(video_id: str) -> Optional[str]:
         transcript_list = transcript_obj.fetch()
         transcript_text = " ".join([item["text"] for item in transcript_list])
         transcript_text = transcript_text.replace("\n", " ")
-        # Filter out non-printable characters
-        transcript_text = "".join(char for char in transcript_text if char in printable)
+        transcript_text = "".join(ch for ch in transcript_text if ch in printable)
         return transcript_text
     except Exception:
-        logging.warning(f"YouTube Transcript API failed to find a manual transcript for video id: {video_id}.")
+        logging.warning(f"YouTube Transcript API failed for video_id: {video_id}")
         return None
 
 def create_whisper_transcript(video_id: str, model: str = "whisper-large-v3") -> str:
@@ -83,33 +82,16 @@ def create_whisper_transcript(video_id: str, model: str = "whisper-large-v3") ->
         if os.path.exists(file_path):
             os.remove(file_path)
 
-def cleanup_transcript_status(func):
-    @wraps(func)
-    def wrapper(video_id: str, task_type: str, *args, **kwargs):
-        status_key = f"transcript_status:{task_type}:{video_id}"
-        try:
-            return func(video_id, task_type, *args, **kwargs)
-        finally:
-            value_cache.delete(status_key)
-    return wrapper
-
-@cleanup_transcript_status
 def process_job(video_id: str, task_type: str):
     """
     Executes the correct transcription method based on task_type.
-    If the first attempt fails or returns None, automatically
-    fall back to the other method.
-    Saves the final transcript to Redis or marks failed on error.
+    If the first attempt fails or returns None, fallback to the other method.
+    If everything fails, set transcript_status to 'failed' in Redis.
     """
+    status_key = f"transcript_status:{task_type}:{video_id}"
+    value_cache.set(status_key, "in_progress")
 
-    # We'll keep the status key as-is for the original request:
-    status_key_original = f"transcript_status:{task_type}:{video_id}"
-    value_cache.set(status_key_original, "in_progress")
-
-    # We may need to store the transcript in the relevant method's key
-    # so the user can find it in their poll. The fallback order is:
-    #   [task_type, the_other_method]
-    fallback_order = []
+    # Determine fallback order
     if task_type == "audio":
         fallback_order = ["audio", "youtube"]
     else:
@@ -122,9 +104,10 @@ def process_job(video_id: str, task_type: str):
     for method in fallback_order:
         logging.info(f"[Worker] Attempting transcription with method '{method}' for video ID: {video_id}")
         try:
+            logging.info(f"[Worker] Attempting method '{method}' for video_id={video_id}")
             if method == "audio":
                 transcript = create_whisper_transcript(video_id)
-            else:  # method == "youtube"
+            else:
                 transcript = get_youtube_str_transcript(video_id)
 
             if transcript:
@@ -134,40 +117,48 @@ def process_job(video_id: str, task_type: str):
                 logging.warning(f"[Worker] Method '{method}' failed or returned no transcript for video_id={video_id}")
 
         except Exception as e:
-            logging.exception(f"[Worker] Error using method '{method}' for video_id={video_id}: {e}")
+            logging.exception(f"[Worker] Exception using method '{method}' for video={video_id}: {e}")
 
     if transcript and final_method_used:
-        # Store in Redis under transcript:<final_method_used>:<video_id>
+        # Save the transcript
         transcript_key = f"transcript:{final_method_used}:{video_id}"
-        value_cache.set(transcript_key, transcript, ex=60 * 60 * 24 * 7)  # 1 week expiration
-        logging.info(f"[Worker] Successfully stored {final_method_used} transcript for video_id={video_id}")
+        value_cache.set(transcript_key, transcript, ex=60 * 60 * 24 * 7)  # e.g. 7 days
+        logging.info(f"[Worker] Stored {final_method_used} transcript for {video_id}")
+
+        # Remove the status key or set to something meaning "complete"
+        value_cache.delete(status_key)
     else:
-        # Could be an error or no subtitles in both fallback attempts
-        logging.warning(f"[Worker] Both fallback methods failed for video_id={video_id}")
+        # Both fallback methods failed
+        logging.error(f"[Worker] Both fallback methods failed. Marking video_id={video_id} as failed.")
+        value_cache.set(status_key, "failed")
 
 def main_loop():
     logging.info("Worker started. Listening for tasks...")
-    SLEEP_TIME = 5 * 60  # 10 minutes
+    SLEEP_TIME = 5 * 60  # 5 minutes
     while True:
+        # Keep heartbeat alive
         value_cache.setex(WORKER_HEARTBEAT, SLEEP_TIME, "alive")
 
         # BLPOP blocks until there's a job
-        logging.info(f"Reconnecting to queue at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logging.info(f"Waiting for new jobs at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         result = value_cache.blpop([QUEUE_NAME], timeout=SLEEP_TIME)
         if not result:
             continue
 
-        queue_name, raw_data = result
+        _, raw_data = result
         try:
             job_data = json.loads(raw_data)
             video_id = job_data["video_id"]
             task_type = job_data["task_type"]
             logging.info(f"Picked up job: {video_id}, task_type={task_type}")
             start_time = time.time()
+
             process_job(video_id, task_type)
-            logging.info(f"Job completed in {time.time() - start_time:.2f} seconds.")
+
+            logging.info(f"Job completed in {time.time() - start_time:.2f}s for video_id={video_id}")
+
         except Exception as e:
-            logging.exception(f"Error decoding job data: {raw_data}, {e}")
+            logging.exception(f"Error decoding job data or processing job: {raw_data}, {e}")
 
 def run_worker():
     while True:

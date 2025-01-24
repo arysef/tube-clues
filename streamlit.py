@@ -66,7 +66,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("reincarnated")
+""".format("tv off")
 
 def parse_json_data(json_data: str):
     """
@@ -178,15 +178,25 @@ def custom_flow(prompt: str, transcript: str) -> float:
 def transcript_creation_flow(video_id: str) -> str:
     """
     Retrieve or create a Whisper transcript for the video, showing a Streamlit spinner while in progress.
+    If it fails quickly, show an error and allow user to retry.
     """
     with st.spinner("Creating transcript for video..."):
         try:
             transcript = get_transcript(video_id, "audio")
             if not transcript:
-                st.error("Could not create transcript for video.")
-                return ""
+                # This means either a time-out or a 'failed' status was detected.
+                st.error("Transcript creation failed or worker indicated a problem.")
+                # Optionally, present a "Try again" button:
+                if st.button("Try Again", key=f"retry_{video_id}"):
+                    # If user clicks "Try Again", call again. Or you can do st.experimental_rerun().
+                    # This re-calls the same flow to re-queue the job.
+                    st.info("Re-trying transcript creation...")
+                    transcript = get_transcript(video_id, "audio")
+                    if not transcript:
+                        st.error("Still failed. Please contact creator or try later.")
+                return ""  # Return empty transcript
         except Exception as e:
-            st.error("Could not create transcript for video.")
+            st.error("Could not create transcript for video (exception).")
             logging.error(f"Transcript creation error: {str(e)}")
             return ""
     return transcript
