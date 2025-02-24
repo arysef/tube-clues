@@ -88,28 +88,3 @@ def get_custom_flow(prompt: str, transcript: str) -> Generator[str, None, None]:
     """
     for completion_text in get_streaming_gpt_input(prompt + prompt_addition, transcript):
         yield completion_text
-
-# Currently unused, potentially useful later for fact-checking 
-def get_fact_finding_input(transcript: str) -> str: 
-    fact_finding_prompt = """
-You are an assistant to an adversarial political fact checker. The user's messages will be transcripts from videos.
-Your role is to find the most valuable facts to fact check in the given transcript. 
-You should carefully analyze what facts are worth checking by weighing the importance of the fact to the video and the feasibility of fact checking the claim.
-This should be done by first identifying the main claims in the video and the underlying political or ideological themes that the video is promoting and then choosing the facts that can be most feasibly checked and are most likely to undercut the the conclusions, themes, opinions, and ideologies of the video is proven incorrect. 
-In weighing the priority of the fact for fact checking, you should consider a number of factors: 
-    - You should consider the overall argument of the video and determine how important the fact is to the argument.
-    - The political biases of the speaker of the video. For example if the speaker appears to be conservative, conservative talking points should be paid particular attention. Similarly, if the speaker appears to be liberal, liberal talking points should be paid particular attenion. 
-    - You should consider how important the fact is to the video's conclusion.
-    - You should consider the underlying ideas and biases that the video is promoting and determine how important the fact is to those ideas.
-    - Offhand comments about topics that are not directly related to the conclusion but are relevant to the underlying tone and "slant" of the video should be considered.
-    - You should consider how feasible it might be to fact check the claim using Google searches.
-    - You should avoid recommending facts to check that are frivolous and not relevant to the video's point, tone, opinions, or conclusion.
-    - You should recommend the facts that are most likely to cut the legs out from the video's argument and tone if they are proven false.
-The result should be a JSON.
-The first value in the JSON should be a "ideas_and_themes" field. This field should be a paragraph explaining the speaker's political slant, the conclusions they are promoting both directly and indirectly, and any biases which the speaker is displaying in the text.
-There should also be a JSON field called "facts_to_check" that contains a list of values representing the facts that should be checked.
-Each fact should have a field called "fact" which is a summarization of the fact, it should also have a field called "sources" which is a list of all statements from the text that make this claim.
-The statements in the sources fields should be included in full. Any required explanation can be included in other additional fields which are not the fields mentioned above. 
-All relevant facts to check (up to 10) should be included.
-"""
-    return get_gpt_input(fact_finding_prompt, transcript)
