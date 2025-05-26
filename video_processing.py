@@ -1,7 +1,9 @@
 from copy import deepcopy
 import feedparser
 from isodate import parse_duration
+import logging
 import os
+import requests
 
 from yt_dlp import YoutubeDL
 
@@ -17,8 +19,6 @@ def download_video_mp3(video_id: str):
         print(f"Video audio cached, no download performed for video ID: {video_id}")
         return 
 
-    # We separately make the filename because yt-dlp adds the ".mp3" extension
-    filename = os.path.join(cached_audio_folder, video_id)
     video_url = to_video_url(video_id)
 
     # Create the audio folder if it isn't made yet
@@ -28,7 +28,7 @@ def download_video_mp3(video_id: str):
 
     filename = os.path.join(cached_audio_folder, video_id)
 
-    # Settings for yt-dlp
+    # Settings for yt-dlp (verbose to view PO token status)
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': filename,
@@ -42,14 +42,15 @@ def download_video_mp3(video_id: str):
         'postprocessor_args': [
             '-ar', '16000',  # Set audio sample rate to 16,000Hz
             '-ac', '1'       # Set audio channels to mono
-        ]
+        ],
+        'verbose': True,  # Enable verbose logging to see PO token usage
     }
 
     # TODO: Likely need error handling here
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download([video_url])
 
-    print("Audio download complete: {}".format(filename))
+    print("Audio download complete: {}".format(to_audio_location(video_id)))
 
 def delete_video_mp3(video_id: str):
     if not os.path.exists(to_audio_location(video_id)):
