@@ -26,7 +26,9 @@ from helpers import escape_all_markdown, escape_unexpected_markdown
 from prompts import (
     get_title_question,
     get_custom_flow,
-    get_bias_flow
+    get_bias_flow,
+    get_context_flow,
+    get_sift_report
 )
 from transcripts import get_transcript
 from video_processing import extract_video_id, get_video_title, get_video_duration
@@ -90,7 +92,7 @@ a:hover, a:active {{
         <p style='font-size: 0.875em;'>{}<br 'style= top:0px;'></p>
     </div>
 </div>
-""".format("tv off")
+""".format("unholy")
 
 def parse_json_data(json_data: str) -> tuple[dict | None, str | None]:
     """
@@ -198,6 +200,72 @@ def custom_flow(prompt: str, transcript: str) -> float:
             stream_text.markdown(escape_unexpected_markdown(completion_text))
             time.sleep(0.05)
             
+    return time.time() - start_time
+
+def context_flow(transcript: str) -> float:
+    """
+    Extract 3 claims from transcript and display as interactive buttons.
+    
+    Args:
+        transcript: The video transcript text
+        
+    Returns:
+        float: Elapsed time (in seconds) for this flow
+    """
+    start_time = time.time()
+    
+    # Check if claims are already cached in session state
+    if 'context_claims' not in st.session_state:
+        with st.spinner("Extracting key claims from video..."):
+            raw = get_context_flow(transcript)
+            results, error = parse_json_data(raw)
+            if error:
+                return time.time() - start_time
+            
+            # Store claims in session state for button handling
+            st.session_state['context_claims'] = results['claims']
+    
+    # Check if a claim has been selected
+    selected_claim_index = st.session_state.get('selected_claim_index', None)
+    
+    if selected_claim_index is not None:
+        # Show the selected claim and generate report
+        claim_data = st.session_state['context_claims'][selected_claim_index]
+        claim = claim_data['claim']
+        quotes = claim_data['quotes']
+        
+        st.write(f"**Providing Context for Claim:** {claim}")
+        
+        # Show quotes in a collapsed expander
+        with st.expander("Quotes from transcript:", expanded=False):
+            for quote in quotes:
+                st.write(f"• \"{quote}\"")
+        
+        # Generate and stream the sift report
+        with st.spinner("Generating fact-checking report..."):
+            stream_text = st.markdown("")
+            for completion_text in get_sift_report(claim, quotes, transcript):
+                stream_text.markdown(escape_unexpected_markdown(completion_text))
+                time.sleep(0.05)
+    else:
+        # Show claim selection interface
+        st.write("**Key Claims from Video:**")
+        
+        # Check if any claims were found
+        if not st.session_state['context_claims']:
+            st.write("No claims were found for analyzing.")
+        else:
+            st.write("Click on a claim to generate a detailed fact-checking report.")
+            
+            # Create buttons for each claim and handle clicks
+            for i, claim_data in enumerate(st.session_state['context_claims']):
+                claim = claim_data['claim']
+                
+                # Create button for each claim
+                if st.button(claim, key=f"claim_button_{i}"):
+                    st.session_state['selected_claim_index'] = i
+                    st.rerun()
+
     return time.time() - start_time
 
 def transcript_creation_flow(video_id: str) -> str:
@@ -308,6 +376,9 @@ def reset_flow_if_new_url() -> None:
     if new_url != old_url:
         st.session_state["flow_param"] = ""
         st.session_state["old_video_url"] = new_url
+        # Clear context flow state when URL changes
+        st.session_state.pop("context_claims", None)
+        st.session_state.pop("selected_claim_index", None)
 
 
 def render_header() -> None:
@@ -327,12 +398,12 @@ def check_worker_status() -> None:
             st.image("data/amigo.png", use_column_width=True)
 
 
-def render_input_controls() -> tuple[bool, bool, bool, bool]:
+def render_input_controls() -> tuple[bool, bool, bool, bool, bool]:
     """
     Render the input controls section of the UI.
     
     Returns:
-        tuple: (clickbait_active, bias_active, custom_active, any_button_clicked)
+        tuple: (clickbait_active, bias_active, custom_active, context_active, any_button_clicked)
     """
     # Video URL input with change callback
     st.text_input(
@@ -361,7 +432,9 @@ def render_input_controls() -> tuple[bool, bool, bool, bool]:
     with col2:
         custom_button = st.button("Custom Prompt", use_container_width=True)
     with col3:
-        bias_button = st.button("Bias", use_container_width=True)
+        context_button = st.button("Provide Context", use_container_width=True)
+    
+    bias_button = False  # Disable bias flow
 
     # Update flow based on button clicks
     if clickbait_button:
@@ -370,6 +443,8 @@ def render_input_controls() -> tuple[bool, bool, bool, bool]:
         st.session_state["flow_param"] = "custom"
     elif bias_button:
         st.session_state["flow_param"] = "bias"
+    elif context_button:
+        st.session_state["flow_param"] = "context"
 
     # Custom prompt input
     st.text_input(
@@ -379,7 +454,7 @@ def render_input_controls() -> tuple[bool, bool, bool, bool]:
     )
 
     # Auto-switch to custom flow if prompt typed (unless another button was just clicked)
-    if st.session_state["custom_prompt"].strip() and not (clickbait_button or bias_button):
+    if st.session_state["custom_prompt"].strip() and not (clickbait_button or context_button):
         st.session_state["flow_param"] = "custom"
 
     # Determine active flow
@@ -387,9 +462,10 @@ def render_input_controls() -> tuple[bool, bool, bool, bool]:
     clickbait_active = (flow_param == "clickbait")
     bias_active = (flow_param == "bias")
     custom_active = (flow_param == "custom")
-    any_button_clicked = (clickbait_active or bias_active or custom_active)
+    context_active = (flow_param == "context")
+    any_button_clicked = (clickbait_active or bias_active or custom_active or context_active)
     
-    return clickbait_active, bias_active, custom_active, any_button_clicked
+    return clickbait_active, bias_active, custom_active, context_active, any_button_clicked
 
 
 def validate_video(video_url: str) -> tuple[bool, str]:
@@ -462,7 +538,8 @@ def execute_selected_flow(
     video_id: str, 
     clickbait_active: bool, 
     bias_active: bool, 
-    custom_active: bool
+    custom_active: bool,
+    context_active: bool
 ) -> float:
     """
     Execute the selected flow based on user choice.
@@ -473,6 +550,7 @@ def execute_selected_flow(
         clickbait_active: Whether clickbait flow is active
         bias_active: Whether bias flow is active
         custom_active: Whether custom flow is active
+        context_active: Whether context flow is active
         
     Returns:
         float: Time taken to execute the flow
@@ -489,6 +567,8 @@ def execute_selected_flow(
             flow_elapsed_time = custom_flow(prompt_text, transcript)
         else:
             st.error("Custom prompt must be between 1 and 250 characters.")
+    elif context_active:
+        flow_elapsed_time = context_flow(transcript)
             
     return flow_elapsed_time
 
@@ -502,7 +582,7 @@ def main():
     check_worker_status()
     
     # Render input controls and get selected flow
-    clickbait_active, bias_active, custom_active, any_button_clicked = render_input_controls()
+    clickbait_active, bias_active, custom_active, context_active, any_button_clicked = render_input_controls()
     
     # Get and validate video URL
     video_url = st.session_state["video_url"].strip()
@@ -542,7 +622,7 @@ def main():
         
     # Execute selected flow
     flow_elapsed_time = execute_selected_flow(
-        transcript, video_id, clickbait_active, bias_active, custom_active
+        transcript, video_id, clickbait_active, bias_active, custom_active, context_active
     )
     
     # Display timing information

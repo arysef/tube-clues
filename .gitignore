@@ -134,3 +134,4 @@ cached_audio/
 .vscode
 **/.DS_Store
 Dockerfile
+CLAUDE.md

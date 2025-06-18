@@ -5,14 +5,28 @@ import langchain
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from redis_wrapper import cache_azure_redis, stream_cache_azure_redis
 
 OPENAI_CHAT_ENGINE = "gpt-4o"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
-model = ChatOpenAI(model="gpt-4o")
+# Define web search tool according to Anthropic API spec
+web_search_tool = {
+    "type": "web_search_20250305",
+    "name": "web_search"
+}
+
+claude_model = ChatAnthropic(
+    model="claude-4-sonnet-20250514",
+    max_tokens=8000
+)
+smart_model = claude_model.bind_tools([web_search_tool])
+fast_model = ChatOpenAI(model="gpt-4o")
 parser = StrOutputParser()
-chain = model | parser
+fast_chain = fast_model | parser
+smart_chain = smart_model | parser
 
 @cache_azure_redis
 def get_gpt_input(question: str, transcript: str, json=True) -> str:
@@ -20,7 +34,7 @@ def get_gpt_input(question: str, transcript: str, json=True) -> str:
         SystemMessage(content=question),
         HumanMessage(content=transcript),
     ]
-    return chain.invoke(messages)
+    return fast_chain.invoke(messages)
 
 @stream_cache_azure_redis
 def get_streaming_gpt_input(question: str, transcript: str):
@@ -29,7 +43,18 @@ def get_streaming_gpt_input(question: str, transcript: str):
         HumanMessage(content=transcript),
     ]
     total = ""
-    for result in chain.stream(messages):
+    for result in fast_chain.stream(messages):
+        total += result
+        yield total
+
+@stream_cache_azure_redis
+def get_streaming_claude_input(question: str, transcript: str):
+    messages = [
+        SystemMessage(content=question),
+        HumanMessage(content=transcript),
+    ]
+    total = ""
+    for result in smart_chain.stream(messages):
         total += result
         yield total
 
@@ -75,6 +100,98 @@ Title: "Lightning Talk: Implementing Coroutines Using C++17 - Alon Wolf - CppCon
 """
     response = get_gpt_input(title_prompt, title, json=False)
     return response
+
+def get_context_flow(transcript: str) -> str:
+    """
+    Takes a transcript and returns 3 claims with supporting quotes.
+    """
+    context_prompt = """
+    You are an expert assistant that analyzes video transcripts to extract claims and supporting evidence. 
+    Use the totality of the transcript to identify the views and claims of the video creator. 
+    Your task is to identify up to 3 important claims made by the video creator in the transcript and provide supporting quotes for each.
+    If a claim is used as an example that is dismantled or disproven, do not include it as a claim. It is important that the claims you identify are those that the video creator is making, not those that they are criticizing or disproving.
+    It is possible to receive a transcript with no claims, in which case you should return an empty list of claims. The number of possible claims is 0 to 3.
+    
+    For each claim, you should:
+    1. Identify a specific, substantive claim and describe it (maximum 300 characters)
+    2. Find 2-3 direct quotes from the transcript that support or relate to this claim
+    3. Ensure enough context is provided in the claim description and quotes so that the claim can be investigated and validated without having to read the rest of the transcript.
+    4. Ensure the claim description is comprehensive enough that a reader can understand the context of the claim being discussed  
+
+    Return your results as a JSON object with the following structure:
+    {
+        "claims": [
+            {
+                "claim": "Short description of the claim.",
+                "quotes": [
+                    "Direct quote from transcript that supports this claim",
+                    "Another supporting quote from the transcript"
+                ]
+            },
+            {
+                "claim": "Second claim text",
+                "quotes": [
+                    "Quote supporting second claim",
+                    "Another quote for second claim"
+                ]
+            },
+            {
+                "claim": "Third claim text", 
+                "quotes": [
+                    "Quote supporting third claim",
+                    "Another quote for third claim"
+                ]
+            }
+        ]
+    }
+    
+    Choose claims that:
+    - Are substantive and interesting to the video's content
+    - Are specific enough to be actionable
+    - Cover different aspects or topics from the video
+    
+    Ensure the JSON is correctly formatted. Return the response in raw JSON format without any extra formatting or code block markers.
+    """
+    return get_gpt_input(context_prompt, transcript)
+
+def get_sift_report(claim: str, quotes: list, transcript: str) -> Generator[str, None, None]:
+    """
+    Generate a fact-checking report for a claim using the sift prompt.
+    Uses Claude 4 Sonnet with web search for enhanced fact-checking capabilities.
+    
+    Args:
+        claim: The claim to analyze
+        quotes: Supporting quotes from the transcript
+        
+    Returns:
+        Generator yielding streaming text for the report
+    """
+    import logging
+    import streamlit as st
+    
+    # Read the sift prompt from file
+    try:
+        with open('sift_prompt.txt', 'r') as f:
+            sift_prompt = f.read()
+    except FileNotFoundError:
+        error_msg = "Warning: sift_prompt.txt not found, using fallback prompt"
+        logging.warning(error_msg)
+        st.warning(error_msg)
+        sift_prompt = "Analyze the following claim and provide a detailed fact-checking report."
+    
+    # Construct the input for analysis
+    analysis_input = f"""
+Video transcript that claim is from: 
+{transcript}
+
+Specific claim to analyze: {claim}
+
+Please analyze this claim and its relevant evidence according to your fact-checking instructions.
+"""
+    
+    # Use Claude 4 Sonnet with web search through the cached streaming function
+    for completion_text in get_streaming_claude_input(sift_prompt, analysis_input):
+        yield completion_text
 
 def get_custom_flow(prompt: str, transcript: str) -> Generator[str, None, None]:
     """
