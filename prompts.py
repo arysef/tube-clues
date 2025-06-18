@@ -170,6 +170,7 @@ def get_sift_report(claim: str, quotes: list, transcript: str) -> Generator[str,
     import streamlit as st
     
     # Read the sift prompt from file
+    # Sift prompt created by Mike Caulfield
     try:
         with open('sift_prompt.txt', 'r') as f:
             sift_prompt = f.read()
